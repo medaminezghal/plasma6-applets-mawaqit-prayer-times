@@ -39,33 +39,21 @@ jobs:
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
 
-      - name: Sync metadata.json (kpackagetool6 --upgrade needs a newer KPlugin.Version)
+      - name: Check metadata.json is in sync
         run: |
           set -euo pipefail
           python3 - "${{ steps.v.outputs.version }}" <<'PY'
           import json, pathlib, sys
-          version = sys.argv[1]
-          p = pathlib.Path("package/metadata.json")
-          meta = json.loads(p.read_text(encoding="utf-8"))
-          if meta["KPlugin"].get("Version") != version:
-              meta["KPlugin"]["Version"] = version
-              p.write_text(json.dumps(meta, indent=4, ensure_ascii=False) + "\n",
-                           encoding="utf-8")
-              print("metadata.json updated")
+          want = sys.argv[1]
+          got = json.loads(pathlib.Path("package/metadata.json")
+                           .read_text(encoding="utf-8"))["KPlugin"].get("Version")
+          if got != want:
+              print(f"::error file=package/metadata.json::KPlugin.Version is '{got}' "
+                    f"but version.txt says '{want}'. kpackagetool6 --upgrade compares "
+                    f"KPlugin.Version, so both must match. Run ./bump.sh {want}")
+              sys.exit(1)
+          print(f"in sync: {got}")
           PY
-
-      - name: Commit metadata.json if it changed
-        run: |
-          set -euo pipefail
-          if git diff --quiet -- package/metadata.json; then
-            echo "metadata.json already in sync"
-            exit 0
-          fi
-          git config user.name  "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add package/metadata.json
-          git commit -m "chore: sync metadata.json to ${{ steps.v.outputs.version }}"
-          git push
 
       - name: Build .plasmoid
         id: build
