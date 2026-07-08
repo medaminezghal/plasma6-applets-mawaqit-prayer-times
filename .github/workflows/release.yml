@@ -69,20 +69,27 @@ jobs:
         run: |
           set -euo pipefail
           ASSET="${{ steps.build.outputs.asset }}"
-          unzip -t "$ASSET" > /dev/null
-          roots="$(unzip -Z1 "$ASSET" | cut -d/ -f1 | sort -u | tr '\n' ' ')"
-          [ "$roots" = "contents metadata.json " ] || { echo "bad zip root: $roots"; exit 1; }
-          unzip -p "$ASSET" metadata.json | python3 - "${{ steps.v.outputs.version }}" <<'PY'
-          import json, sys
-          m = json.load(sys.stdin)["KPlugin"]
-          assert m["Version"] == sys.argv[1], f'Version {m["Version"]} != {sys.argv[1]}'
+          # NB: read the zip from Python. Piping `unzip -p` into `python3 -` does
+          # not work: the heredoc owns stdin, so the pipe is silently discarded.
+          python3 - "$ASSET" "${{ steps.v.outputs.version }}" <<'PY'
+          import json, sys, zipfile
+          asset, want = sys.argv[1], sys.argv[2]
+          with zipfile.ZipFile(asset) as z:
+              bad = z.testzip()
+              assert bad is None, f"corrupt entry: {bad}"
+              roots = sorted({n.split("/")[0] for n in z.namelist()})
+              assert roots == ["contents", "metadata.json"], f"bad zip root: {roots}"
+              m = json.loads(z.read("metadata.json"))["KPlugin"]
+          assert m["Version"] == want, f'Version {m["Version"]} != {want}'
           assert m.get("Id"), "KPlugin.Id missing — kpackagetool6 would reject this"
           print("ok:", m["Id"], m["Version"])
           PY
-          echo "### \`$ASSET\`" >> "$GITHUB_STEP_SUMMARY"
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
-          sha256sum "$ASSET" >> "$GITHUB_STEP_SUMMARY"
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          {
+            echo "### \`$ASSET\`"
+            echo '```'
+            sha256sum "$ASSET"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Tag and release
         env:
