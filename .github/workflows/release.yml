@@ -1,0 +1,111 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+    paths: ['version.txt']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+env:
+  PKGNAME: plasma-mawaqit-prayer-times
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read and validate version
+        id: v
+        run: |
+          set -euo pipefail
+          VERSION="$(tr -d '[:space:]' < version.txt)"
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error file=version.txt::'$VERSION' is not x.y.z"
+            exit 1
+          fi
+          TAG="v$VERSION"
+          if git ls-remote --exit-code --tags origin "refs/tags/$TAG" >/dev/null 2>&1; then
+            echo "::error file=version.txt::tag $TAG already exists — bump version.txt"
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Sync metadata.json (kpackagetool6 --upgrade needs a newer KPlugin.Version)
+        run: |
+          set -euo pipefail
+          python3 - "${{ steps.v.outputs.version }}" <<'PY'
+          import json, pathlib, sys
+          version = sys.argv[1]
+          p = pathlib.Path("package/metadata.json")
+          meta = json.loads(p.read_text(encoding="utf-8"))
+          if meta["KPlugin"].get("Version") != version:
+              meta["KPlugin"]["Version"] = version
+              p.write_text(json.dumps(meta, indent=4, ensure_ascii=False) + "\n",
+                           encoding="utf-8")
+              print("metadata.json updated")
+          PY
+
+      - name: Commit metadata.json if it changed
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- package/metadata.json; then
+            echo "metadata.json already in sync"
+            exit 0
+          fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package/metadata.json
+          git commit -m "chore: sync metadata.json to ${{ steps.v.outputs.version }}"
+          git push
+
+      - name: Build .plasmoid
+        id: build
+        run: |
+          set -euo pipefail
+          ASSET="${PKGNAME}-${{ steps.v.outputs.version }}.plasmoid"
+          # metadata.json and contents/ must sit at the archive ROOT: kpackage
+          # only descends into a single top-level directory, never two entries.
+          ( cd package && zip -r -X -q "../$ASSET" metadata.json contents -x '.*' '*/.*' )
+          echo "asset=$ASSET" >> "$GITHUB_OUTPUT"
+
+      - name: Verify the artifact
+        run: |
+          set -euo pipefail
+          ASSET="${{ steps.build.outputs.asset }}"
+          unzip -t "$ASSET" > /dev/null
+          roots="$(unzip -Z1 "$ASSET" | cut -d/ -f1 | sort -u | tr '\n' ' ')"
+          [ "$roots" = "contents metadata.json " ] || { echo "bad zip root: $roots"; exit 1; }
+          unzip -p "$ASSET" metadata.json | python3 - "${{ steps.v.outputs.version }}" <<'PY'
+          import json, sys
+          m = json.load(sys.stdin)["KPlugin"]
+          assert m["Version"] == sys.argv[1], f'Version {m["Version"]} != {sys.argv[1]}'
+          assert m.get("Id"), "KPlugin.Id missing — kpackagetool6 would reject this"
+          print("ok:", m["Id"], m["Version"])
+          PY
+          echo "### \`$ASSET\`" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          sha256sum "$ASSET" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Tag and release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TAG="${{ steps.v.outputs.tag }}"
+          git tag -a "$TAG" -m "$TAG"
+          git push origin "$TAG"
+          gh release create "$TAG" \
+            --verify-tag \
+            --title "$TAG" \
+            --generate-notes \
+            "${{ steps.build.outputs.asset }}"
