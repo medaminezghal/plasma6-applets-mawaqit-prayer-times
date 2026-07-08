@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kcfg xmlns="http://www.kde.org/standards/kcfg/1.0"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://www.kde.org/standards/kcfg/1.0
+      http://www.kde.org/standards/kcfg/1.0/kcfg.xsd">
+    <kcfgfile name=""/>
+    <group name="General">
+        <!-- Mosque identity -->
+        <entry name="mosqueSlug" type="String">
+            <label>Mawaqit mosque slug (last part of the mawaqit.net URL)</label>
+            <default></default>
+        </entry>
+        <entry name="mosqueName" type="String">
+            <label>Human-readable mosque name</label>
+            <default></default>
+        </entry>
+
+        <!-- Display -->
+        <entry name="displayMode" type="String">
+            <label>What to show: "full" (all prayer times) or "next" (next prayer only)</label>
+            <default>full</default>
+        </entry>
+        <entry name="labelLanguage" type="String">
+            <label>Prayer name language: auto, en, ar, fr</label>
+            <default>auto</default>
+        </entry>
+        <entry name="use24h" type="Bool">
+            <label>Use 24-hour time format</label>
+            <default>true</default>
+        </entry>
+        <entry name="showSunrise" type="Bool">
+            <label>Show sunrise (shuruq) row in the full view</label>
+            <default>true</default>
+        </entry>
+        <entry name="showCountdownInPanel" type="Bool">
+            <label>Show countdown next to the prayer name in the panel</label>
+            <default>true</default>
+        </entry>
+
+        <!-- Hijri date (mosque-provided, cached from confData) -->
+        <entry name="cachedHijriAdjustment" type="Int">
+            <label>Mosque-provided hijri adjustment from confData</label>
+            <default>0</default>
+        </entry>
+        <entry name="cachedHijriForce30" type="Bool">
+            <label>Mosque-provided hijriDateForceTo30 flag from confData</label>
+            <default>false</default>
+        </entry>
+
+        <!-- Refresh -->
+        <entry name="refreshDays" type="Int">
+            <label>Re-download the calendar every N days (iqama tables change occasionally)</label>
+            <default>7</default>
+        </entry>
+
+        <!-- Cache (managed by the applet, not shown in UI) -->
+        <entry name="cachedCalendar" type="String">
+            <label>Cached 12-month calendar JSON from confData</label>
+            <default></default>
+        </entry>
+        <entry name="cachedYear" type="Int">
+            <label>Year the cached calendar belongs to</label>
+            <default>0</default>
+        </entry>
+        <entry name="lastFetch" type="String">
+            <label>ISO timestamp of the last successful download</label>
+            <default></default>
+        </entry>
+    </group>
+</kcfg>
