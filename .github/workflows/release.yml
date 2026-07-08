@@ -22,14 +22,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Own step, unconditional. Do NOT fold this into a step that can
-      # early-exit: `git commit` and `git tag -a` both need an identity.
-      - name: Configure git identity
-        run: |
-          set -euo pipefail
-          git config user.name  "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
       - name: Read and validate version
         id: v
         run: |
@@ -47,33 +39,21 @@ jobs:
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
 
-      - name: Sync metadata.json (kpackagetool6 --upgrade compares KPlugin.Version)
+      - name: Check metadata.json is in sync
         run: |
           set -euo pipefail
           python3 - "${{ steps.v.outputs.version }}" <<'PY'
           import json, pathlib, sys
-          version = sys.argv[1]
-          p = pathlib.Path("package/metadata.json")
-          meta = json.loads(p.read_text(encoding="utf-8"))
-          if meta["KPlugin"].get("Version") != version:
-              meta["KPlugin"]["Version"] = version
-              p.write_text(json.dumps(meta, indent=4, ensure_ascii=False) + "\n",
-                           encoding="utf-8")
-              print("metadata.json updated")
-          else:
-              print("metadata.json already in sync")
+          want = sys.argv[1]
+          got = json.loads(pathlib.Path("package/metadata.json")
+                           .read_text(encoding="utf-8"))["KPlugin"].get("Version")
+          if got != want:
+              print(f"::error file=package/metadata.json::KPlugin.Version is '{got}' but "
+                    f"version.txt says '{want}'. kpackagetool6 --upgrade compares "
+                    f"KPlugin.Version, so both must match. Run ./bump.sh {want}")
+              sys.exit(1)
+          print(f"in sync: {got}")
           PY
-
-      - name: Commit metadata.json if it changed
-        run: |
-          set -euo pipefail
-          if git diff --quiet -- package/metadata.json; then
-            echo "nothing to commit"
-            exit 0
-          fi
-          git add package/metadata.json
-          git commit -m "chore: sync metadata.json to ${{ steps.v.outputs.version }}"
-          git push
 
       - name: Build .plasmoid
         id: build
@@ -111,16 +91,17 @@ jobs:
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Tag and release
+      - name: Create release (gh creates the tag server-side)
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          TAG="${{ steps.v.outputs.tag }}"
-          git tag -a "$TAG" -m "$TAG"
-          git push origin "$TAG"
-          gh release create "$TAG" \
-            --verify-tag \
-            --title "$TAG" \
+          # This job performs ZERO git writes: no commit, no tag, no push. gh creates
+          # the tag via the API at --target. Nothing for the ruleset to reject, and
+          # no git identity is ever needed. (No --verify-tag: it aborts when the tag
+          # is ABSENT, which is precisely our case.)
+          gh release create "${{ steps.v.outputs.tag }}" \
+            --target "$GITHUB_SHA" \
+            --title "${{ steps.v.outputs.tag }}" \
             --generate-notes \
             "${{ steps.build.outputs.asset }}"
