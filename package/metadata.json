@@ -1,0 +1,23 @@
+{
+    "KPackageStructure": "Plasma/Applet",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Name": "Mohamed Amine Zghal"
+            }
+        ],
+        "Category": "Date and Time",
+        "Description": "Prayer times for your mosque, straight from mawaqit.net",
+        "Description[ar]": "مواقيت الصلاة لمسجدك مباشرة من mawaqit.net",
+        "Description[fr]": "Horaires de prière de votre mosquée, directement depuis mawaqit.net",
+        "Icon": "/icons/mosque.svg",
+        "Id": "com.github.medaminezghal.mawaqit",
+        "License": "GPL-3.0+",
+        "Name": "Mawaqit Prayer Times",
+        "Name[ar]": "مواقيت الصلاة",
+        "Name[fr]": "Mawaqit Horaires de prière",
+        "Version": "0.4.5",
+        "Website": "https://github.com/medaminezghal"
+    },
+    "X-Plasma-API-Minimum-Version": "6.0"
+}
