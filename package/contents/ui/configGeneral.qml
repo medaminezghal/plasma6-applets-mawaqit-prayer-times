@@ -207,7 +207,10 @@ KCM.SimpleKCM {
                     id: searchField
                     Layout.fillWidth: true
                     placeholderText: i18n("City or mosque name…")
-                    onAccepted: page.doSearch()
+                    // Enter runs the search and is swallowed here, so it does
+                    // not fall through to the dialog's default (OK) button
+                    Keys.onReturnPressed: (event) => { page.doSearch(); event.accepted = true; }
+                    Keys.onEnterPressed: (event) => { page.doSearch(); event.accepted = true; }
                 }
 
                 QQC2.Button {
@@ -306,6 +309,10 @@ KCM.SimpleKCM {
                 // Enter or focus leaving the field
                 onTextEdited: page.cfg_mosqueSlug = text
                 onEditingFinished: page.applySlugInput()
+                // Enter applies + verifies the slug in place; swallow it so it
+                // does not fall through to the dialog's OK button and close it
+                Keys.onReturnPressed: (event) => { page.applySlugInput(); event.accepted = true; }
+                Keys.onEnterPressed: (event) => { page.applySlugInput(); event.accepted = true; }
             }
 
             QQC2.Label {
