@@ -14,7 +14,8 @@ Item {
     LayoutMirroring.enabled: root.rtl
     LayoutMirroring.childrenInherit: true
 
-    readonly property bool showFullList: root.displayMode === "full"
+    // The expanded view (desktop body and panel popup) always shows the full
+    // table. displayMode only affects the inline panel strip.
     readonly property bool hasContent: root.configured && root.calendar !== null
     readonly property int outerMargin: Kirigami.Units.largeSpacing * 2
 
@@ -97,41 +98,8 @@ Item {
             Layout.bottomMargin: Kirigami.Units.smallSpacing
         }
 
-        /* ---------- Mode: next prayer only ---------- */
+        /* ---------- Full times table ---------- */
         ColumnLayout {
-            visible: !full.showFullList
-            Layout.fillWidth: true
-            spacing: Kirigami.Units.smallSpacing
-
-            PlasmaExtras.Heading {
-                Layout.alignment: Qt.AlignHCenter
-                Layout.topMargin: Kirigami.Units.largeSpacing
-                level: 1
-                text: root.nextName
-            }
-
-            PlasmaExtras.Heading {
-                Layout.alignment: Qt.AlignHCenter
-                level: 2
-                text: root.nextTimeFormatted
-                        + (root.next && root.next.tomorrow
-                           ? " (" + Mawaqit.uiString("tomorrow", Plasmoid.configuration.labelLanguage) + ")"
-                           : "")
-            }
-
-            PlasmaComponents3.Label {
-                Layout.alignment: Qt.AlignHCenter
-                Layout.bottomMargin: Kirigami.Units.largeSpacing
-                text: root.countdown !== ""
-                      ? Mawaqit.inCountdown(root.countdown, Plasmoid.configuration.labelLanguage)
-                      : ""
-                opacity: 0.7
-            }
-        }
-
-        /* ---------- Mode: full times table ---------- */
-        ColumnLayout {
-            visible: full.showFullList
             Layout.fillWidth: true
             spacing: 0
 
