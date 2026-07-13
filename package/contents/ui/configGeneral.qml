@@ -3,6 +3,8 @@ import QtQuick.Controls as QQC2
 import QtQuick.Layouts
 import org.kde.kirigami as Kirigami
 import org.kde.kcmutils as KCM
+import org.kde.plasma.plasmoid
+import org.kde.plasma.core as PlasmaCore
 import "../code/mawaqit.js" as Mawaqit
 
 KCM.SimpleKCM {
@@ -321,17 +323,26 @@ KCM.SimpleKCM {
                 Kirigami.FormData.label: i18n("Display")
             }
 
-            QQC2.RadioButton {
-                Kirigami.FormData.label: i18n("Widget shows:")
-                text: i18n("All prayer times of the day")
-                checked: page.cfg_displayMode === "full"
-                onToggled: page.cfg_displayMode = "full"
-            }
+            // Only meaningful in a panel: it switches the inline panel strip
+            // between all prayers and the next one. On the desktop the widget
+            // always shows the full table, so the option is hidden there.
+            ColumnLayout {
+                Kirigami.FormData.label: i18n("Panel shows:")
+                visible: Plasmoid.formFactor === PlasmaCore.Types.Horizontal
+                         || Plasmoid.formFactor === PlasmaCore.Types.Vertical
+                spacing: Kirigami.Units.smallSpacing
 
-            QQC2.RadioButton {
-                text: i18n("Only the next prayer")
-                checked: page.cfg_displayMode === "next"
-                onToggled: page.cfg_displayMode = "next"
+                QQC2.RadioButton {
+                    text: i18n("All prayer times of the day")
+                    checked: page.cfg_displayMode === "full"
+                    onToggled: page.cfg_displayMode = "full"
+                }
+
+                QQC2.RadioButton {
+                    text: i18n("Only the next prayer")
+                    checked: page.cfg_displayMode === "next"
+                    onToggled: page.cfg_displayMode = "next"
+                }
             }
 
             QQC2.ComboBox {
