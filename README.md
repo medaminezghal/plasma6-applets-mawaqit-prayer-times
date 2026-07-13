@@ -1,4 +1,8 @@
-# Mawaqit Prayer Times — KDE Plasma 6 Widget
+<p align="center">
+  <img src="assets/mawaqit-logo-512.png" width="140" alt="Mawaqit Prayer Times logo">
+</p>
+
+<h1 align="center">Mawaqit Prayer Times — KDE Plasma 6 Widget</h1>
 
 A Plasma 6 plasmoid that shows prayer times for **your** mosque, using the
 exact timetable your mosque publishes on [mawaqit.net](https://mawaqit.net)
@@ -36,6 +40,16 @@ directly to mawaqit.net roughly once a week.
 > manually.
 
 ## Installation
+
+### KDE Store (Get New Widgets)
+
+Install straight from Plasma — no terminal needed: right-click your panel or
+desktop → **Add Widgets…** → **Get New Widgets…** → **Download New Plasma
+Widgets**, then search for *Mawaqit Prayer Times* and install.
+
+Or open the store page directly:
+[store.kde.org](https://store.kde.org/p/2365203) ·
+[opendesktop.org](https://www.opendesktop.org/p/2365203)
 
 ### Arch Linux
 
