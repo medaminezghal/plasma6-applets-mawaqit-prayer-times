@@ -380,6 +380,10 @@ KCM.SimpleKCM {
             QQC2.CheckBox {
                 id: countdownCheck
                 text: i18n("Show countdown in the panel")
+                // No effect on the desktop widget, which always shows the full
+                // table; only the panel strip has an inline countdown.
+                visible: Plasmoid.formFactor === PlasmaCore.Types.Horizontal
+                         || Plasmoid.formFactor === PlasmaCore.Types.Vertical
             }
 
             /* ----------------------- Updates ------------------------ */
