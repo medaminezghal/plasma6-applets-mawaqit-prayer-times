@@ -61,19 +61,37 @@ MouseArea {
         }
     }
 
-    /* ---------------- next-prayer mode, horizontal panel -------------- */
+    /* ---------------- next-prayer mode, horizontal panel --------------
+     * Same hijri date + separator as the full-mode strip, so the date is
+     * presented identically in both display modes, followed by the next
+     * prayer and its optional countdown. */
     Component {
         id: nextHorizontalComp
         RowLayout {
-            spacing: Kirigami.Units.smallSpacing
+            spacing: Kirigami.Units.largeSpacing
+
             PlasmaComponents3.Label {
-                text: root.nextName + " " + root.nextTimeFormatted
+                text: root.hijriDateText
                 font.weight: Font.DemiBold
             }
-            PlasmaComponents3.Label {
-                visible: compact.showCountdown
-                text: "· " + root.countdown
-                opacity: 0.7
+
+            Kirigami.Separator {
+                Layout.fillHeight: true
+                Layout.topMargin: Kirigami.Units.smallSpacing
+                Layout.bottomMargin: Kirigami.Units.smallSpacing
+            }
+
+            RowLayout {
+                spacing: Kirigami.Units.smallSpacing
+                PlasmaComponents3.Label {
+                    text: root.nextName + " " + root.nextTimeFormatted
+                    font.weight: Font.DemiBold
+                }
+                PlasmaComponents3.Label {
+                    visible: compact.showCountdown
+                    text: "· " + root.countdown
+                    opacity: 0.7
+                }
             }
         }
     }
