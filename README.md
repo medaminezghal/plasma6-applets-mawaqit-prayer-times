@@ -13,6 +13,10 @@ exact timetable your mosque publishes on [mawaqit.net](https://mawaqit.net)
 - **Panel-friendly compact view**: next prayer + live countdown in your panel
   (horizontal and vertical panels supported); click to expand
 - **Two display modes**: full daily timetable, or only the next prayer
+- **Appearance customization**: pick a custom font and adjust the text size,
+  override the text and next-prayer accent colors, and give the widget a
+  custom background with adjustable color, opacity, and corner radius — every
+  option is opt-in and falls back to your Plasma theme
 - **Mosque finder in settings**: detect your location automatically
   (GeoClue/Qt Positioning, with IP-based fallback), search Mawaqit for
   mosques in your city, and pick yours from the list

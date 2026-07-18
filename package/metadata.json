@@ -16,7 +16,7 @@
         "Name": "Mawaqit Prayer Times",
         "Name[ar]": "مواقيت الصلاة",
         "Name[fr]": "Mawaqit Horaires de prière",
-        "Version": "0.5.1",
+        "Version": "0.6.0",
         "Website": "https://github.com/medaminezghal"
     },
     "X-Plasma-API-Minimum-Version": "6.0"
