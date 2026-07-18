@@ -6,4 +6,9 @@ ConfigModel {
         icon: "preferences-system-time"
         source: "configGeneral.qml"
     }
+    ConfigCategory {
+        name: i18n("Appearance")
+        icon: "preferences-desktop-color"
+        source: "configAppearance.qml"
+    }
 }

@@ -47,6 +47,52 @@
             <default>false</default>
         </entry>
 
+        <!-- Appearance -->
+        <entry name="fontFamily" type="String">
+            <label>Font family for the prayer times ("" = system default)</label>
+            <default></default>
+        </entry>
+        <entry name="fontScale" type="Double">
+            <label>Multiplier applied to the default font sizes (1.0 = default)</label>
+            <default>1.0</default>
+        </entry>
+        <entry name="boldNextPrayer" type="Bool">
+            <label>Render the next prayer in bold</label>
+            <default>true</default>
+        </entry>
+        <entry name="customTextColor" type="Bool">
+            <label>Override the theme text color</label>
+            <default>false</default>
+        </entry>
+        <entry name="textColor" type="Color">
+            <label>Custom text color (used only when customTextColor is true)</label>
+            <default>#eff0f1</default>
+        </entry>
+        <entry name="customAccentColor" type="Bool">
+            <label>Override the theme accent color used for the next prayer</label>
+            <default>false</default>
+        </entry>
+        <entry name="accentColor" type="Color">
+            <label>Custom accent color (used only when customAccentColor is true)</label>
+            <default>#3daee9</default>
+        </entry>
+        <entry name="customBackground" type="Bool">
+            <label>Draw a custom background instead of the theme background</label>
+            <default>false</default>
+        </entry>
+        <entry name="backgroundColor" type="Color">
+            <label>Custom background color</label>
+            <default>#31363b</default>
+        </entry>
+        <entry name="backgroundOpacity" type="Int">
+            <label>Custom background opacity, 0–100</label>
+            <default>85</default>
+        </entry>
+        <entry name="backgroundRadius" type="Int">
+            <label>Custom background corner radius in pixels</label>
+            <default>8</default>
+        </entry>
+
         <!-- Refresh -->
         <entry name="refreshDays" type="Int">
             <label>Re-download the calendar every N days (iqama tables change occasionally)</label>

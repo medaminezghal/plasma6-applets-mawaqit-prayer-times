@@ -24,6 +24,10 @@ MouseArea {
     readonly property var shownIndices: Plasmoid.configuration.showSunrise
                                         ? [0, 1, 2, 3, 4, 5] : [0, 2, 3, 4, 5]
 
+    // Appearance shortcuts (resolved in main.qml)
+    readonly property string appFont: root.appFontFamily
+    readonly property real appScale: root.appFontScale
+
     Layout.minimumWidth: vertical ? 0 : mainLoader.implicitWidth + Kirigami.Units.smallSpacing * 2
     Layout.minimumHeight: vertical ? mainLoader.implicitHeight + Kirigami.Units.smallSpacing * 2 : 0
 
@@ -72,7 +76,10 @@ MouseArea {
 
             PlasmaComponents3.Label {
                 text: root.hijriDateText
+                font.family: compact.appFont
+                font.pointSize: Kirigami.Theme.defaultFont.pointSize * compact.appScale
                 font.weight: Font.DemiBold
+                color: root.appTextColor
             }
 
             Kirigami.Separator {
@@ -85,11 +92,17 @@ MouseArea {
                 spacing: Kirigami.Units.smallSpacing
                 PlasmaComponents3.Label {
                     text: root.nextName + " " + root.nextTimeFormatted
+                    font.family: compact.appFont
+                    font.pointSize: Kirigami.Theme.defaultFont.pointSize * compact.appScale
                     font.weight: Font.DemiBold
+                    color: root.appTextColor
                 }
                 PlasmaComponents3.Label {
                     visible: compact.showCountdown
                     text: "· " + root.countdown
+                    font.family: compact.appFont
+                    font.pointSize: Kirigami.Theme.defaultFont.pointSize * compact.appScale
+                    color: root.appTextColor
                     opacity: 0.7
                 }
             }
@@ -104,13 +117,17 @@ MouseArea {
             PlasmaComponents3.Label {
                 Layout.alignment: Qt.AlignHCenter
                 text: root.nextName
-                font.pointSize: Kirigami.Theme.smallFont.pointSize
+                font.family: compact.appFont
+                font.pointSize: Kirigami.Theme.smallFont.pointSize * compact.appScale
                 font.weight: Font.DemiBold
+                color: root.appTextColor
             }
             PlasmaComponents3.Label {
                 Layout.alignment: Qt.AlignHCenter
                 text: root.next ? root.next.time : ""
-                font.pointSize: Kirigami.Theme.smallFont.pointSize
+                font.family: compact.appFont
+                font.pointSize: Kirigami.Theme.smallFont.pointSize * compact.appScale
+                color: root.appTextColor
             }
         }
     }
@@ -125,7 +142,10 @@ MouseArea {
 
             PlasmaComponents3.Label {
                 text: root.hijriDateText
+                font.family: compact.appFont
+                font.pointSize: Kirigami.Theme.defaultFont.pointSize * compact.appScale
                 font.weight: Font.DemiBold
+                color: root.appTextColor
             }
 
             Kirigami.Separator {
@@ -150,11 +170,12 @@ MouseArea {
                         anchors.horizontalCenter: parent.horizontalCenter
                         text: root.names[prayerCell.modelData] + " "
                               + Mawaqit.formatTime(root.todayTimes[prayerCell.modelData], root.use24h)
-                        font.weight: prayerCell.isNext ? Font.Bold : Font.Normal
+                        font.family: compact.appFont
+                        font.weight: (prayerCell.isNext && root.appBoldNext) ? Font.Bold : Font.Normal
                         font.pointSize: Kirigami.Theme.defaultFont.pointSize
-                                        * (prayerCell.isNext ? 1.15 : 1)
-                        color: prayerCell.isNext ? Kirigami.Theme.highlightColor
-                                                 : Kirigami.Theme.textColor
+                                        * (prayerCell.isNext ? 1.15 : 1) * compact.appScale
+                        color: prayerCell.isNext ? root.appAccentColor
+                                                 : root.appTextColor
                         opacity: prayerCell.modelData === 1 ? 0.7 : 1
                     }
 
@@ -163,8 +184,9 @@ MouseArea {
                         visible: prayerCell.isNext && compact.showCountdown
                                  && root.countdownHM !== ""
                         text: Mawaqit.inCountdown(root.countdownHM, Plasmoid.configuration.labelLanguage)
-                        font.pointSize: Kirigami.Theme.smallFont.pointSize
-                        color: Kirigami.Theme.highlightColor
+                        font.family: compact.appFont
+                        font.pointSize: Kirigami.Theme.smallFont.pointSize * compact.appScale
+                        color: root.appAccentColor
                         opacity: 0.85
                     }
                 }
@@ -186,10 +208,11 @@ MouseArea {
                                                    && !root.next.tomorrow
                     Layout.alignment: Qt.AlignHCenter
                     text: root.todayTimes[modelData]
-                    font.pointSize: Kirigami.Theme.smallFont.pointSize
-                    font.weight: isNext ? Font.Bold : Font.Normal
-                    color: isNext ? Kirigami.Theme.highlightColor
-                                  : Kirigami.Theme.textColor
+                    font.family: compact.appFont
+                    font.pointSize: Kirigami.Theme.smallFont.pointSize * compact.appScale
+                    font.weight: (isNext && root.appBoldNext) ? Font.Bold : Font.Normal
+                    color: isNext ? root.appAccentColor
+                                  : root.appTextColor
                     opacity: modelData === 1 ? 0.65 : 1
                 }
             }
