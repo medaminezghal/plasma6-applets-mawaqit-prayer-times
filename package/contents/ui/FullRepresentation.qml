@@ -1,6 +1,8 @@
 import QtQuick
+import QtQuick.Window
 import QtQuick.Layouts
 import org.kde.plasma.plasmoid
+import org.kde.plasma.core as PlasmaCore
 import org.kde.plasma.components as PlasmaComponents3
 import org.kde.plasma.extras as PlasmaExtras
 import org.kde.kirigami as Kirigami
@@ -26,6 +28,34 @@ Item {
                           : Kirigami.Units.gridUnit * 10
     Layout.preferredHeight: Layout.minimumHeight
     Layout.maximumHeight: Layout.minimumHeight
+
+    /* --------------------- custom background ------------------------ *
+     * Drawn behind everything when the user enables it. On the desktop the
+     * theme frame is already suppressed via Plasmoid.backgroundHints; in the
+     * panel popup we additionally drop the dialog's own frame below so this
+     * rounded rectangle is the only background. */
+    Rectangle {
+        anchors.fill: parent
+        visible: root.appCustomBackground
+        color: root.appBackgroundColor
+        radius: root.appBackgroundRadius
+    }
+
+    // Remove the popup dialog's theme frame when a custom background is used,
+    // so the rectangle above isn't boxed inside it. No-op on the desktop (no
+    // popup window) and safely skipped if the window has no backgroundHints.
+    function applyPopupBackground() {
+        var w = Window.window;
+        if (w && typeof w.backgroundHints !== "undefined") {
+            w.backgroundHints = Qt.binding(function () {
+                return root.appCustomBackground
+                    ? PlasmaCore.Types.NoBackground
+                    : PlasmaCore.Types.DefaultBackground;
+            });
+        }
+    }
+    Component.onCompleted: applyPopupBackground()
+    onVisibleChanged: if (visible) applyPopupBackground()
 
     /* ------------------------- Unconfigured ------------------------- */
     PlasmaExtras.PlaceholderMessage {
@@ -82,13 +112,19 @@ Item {
             text: root.mosqueName
             elide: Text.ElideRight
             horizontalAlignment: Text.AlignHCenter
+            font.family: root.appFontFamily
+            font.pointSize: Kirigami.Theme.defaultFont.pointSize * 1.2 * root.appFontScale
+            color: root.appTextColor
         }
 
         PlasmaComponents3.Label {
             Layout.fillWidth: true
             horizontalAlignment: Text.AlignHCenter
             text: root.hijriDateText
+            font.family: root.appFontFamily
+            font.pointSize: Kirigami.Theme.defaultFont.pointSize * root.appFontScale
             font.weight: Font.DemiBold
+            color: root.appTextColor
             opacity: 0.85
         }
 
@@ -120,7 +156,7 @@ Item {
                     Layout.preferredHeight: Kirigami.Units.gridUnit * 1.7
                     radius: Kirigami.Units.cornerRadius
                     color: isNext
-                           ? Qt.alpha(Kirigami.Theme.highlightColor, 0.25)
+                           ? Qt.alpha(root.appAccentColor, 0.25)
                            : "transparent"
 
                     RowLayout {
@@ -130,7 +166,10 @@ Item {
 
                         PlasmaComponents3.Label {
                             text: root.names[prayerRow.index]
-                            font.weight: prayerRow.isNext ? Font.Bold : Font.Normal
+                            font.family: root.appFontFamily
+                            font.pointSize: Kirigami.Theme.defaultFont.pointSize * root.appFontScale
+                            font.weight: (prayerRow.isNext && root.appBoldNext) ? Font.Bold : Font.Normal
+                            color: root.appTextColor
                             opacity: prayerRow.isSunrise ? 0.65 : 1
                         }
 
@@ -140,7 +179,10 @@ Item {
                             text: root.todayTimes
                                   ? Mawaqit.formatTime(root.todayTimes[prayerRow.index], root.use24h)
                                   : "—"
-                            font.weight: prayerRow.isNext ? Font.Bold : Font.Normal
+                            font.family: root.appFontFamily
+                            font.pointSize: Kirigami.Theme.defaultFont.pointSize * root.appFontScale
+                            font.weight: (prayerRow.isNext && root.appBoldNext) ? Font.Bold : Font.Normal
+                            color: root.appTextColor
                             opacity: prayerRow.isSunrise ? 0.65 : 1
                         }
                     }
@@ -163,7 +205,9 @@ Item {
                         + Mawaqit.inCountdown(root.countdown, Plasmoid.configuration.labelLanguage)
                       : root.nextName + " " + Mawaqit.inCountdown(root.countdown, Plasmoid.configuration.labelLanguage)
                 opacity: 0.7
-                font.pointSize: Kirigami.Theme.smallFont.pointSize
+                font.family: root.appFontFamily
+                font.pointSize: Kirigami.Theme.smallFont.pointSize * root.appFontScale
+                color: root.appTextColor
             }
         }
     }

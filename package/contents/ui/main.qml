@@ -1,6 +1,7 @@
 import QtQuick
 import org.kde.plasma.plasmoid
 import org.kde.plasma.core as PlasmaCore
+import org.kde.kirigami as Kirigami
 import "../code/mawaqit.js" as Mawaqit
 
 PlasmoidItem {
@@ -21,6 +22,28 @@ PlasmoidItem {
     readonly property bool use24h: Plasmoid.configuration.use24h
     readonly property string displayMode: Plasmoid.configuration.displayMode
 
+    /* ----------------------- appearance (config) ----------------------- */
+    // Resolved once here so the representations stay declarative and don't
+    // each re-implement the "custom value or fall back to the theme" logic.
+    readonly property string appFontFamily: Plasmoid.configuration.fontFamily !== ""
+                                            ? Plasmoid.configuration.fontFamily
+                                            : Kirigami.Theme.defaultFont.family
+    readonly property real appFontScale: Plasmoid.configuration.fontScale
+    readonly property bool appBoldNext: Plasmoid.configuration.boldNextPrayer
+    readonly property color appTextColor: Plasmoid.configuration.customTextColor
+                                          ? Plasmoid.configuration.textColor
+                                          : Kirigami.Theme.textColor
+    readonly property color appAccentColor: Plasmoid.configuration.customAccentColor
+                                            ? Plasmoid.configuration.accentColor
+                                            : Kirigami.Theme.highlightColor
+    readonly property bool appCustomBackground: Plasmoid.configuration.customBackground
+    readonly property color appBackgroundColor: Qt.rgba(
+                                            Plasmoid.configuration.backgroundColor.r,
+                                            Plasmoid.configuration.backgroundColor.g,
+                                            Plasmoid.configuration.backgroundColor.b,
+                                            Plasmoid.configuration.backgroundOpacity / 100)
+    readonly property int appBackgroundRadius: Plasmoid.configuration.backgroundRadius
+
     property var calendar: null
     property var todayTimes: null      // [fajr, shuruq, dhuhr, asr, maghrib, isha]
     property var next: null            // {index, time, date, tomorrow, estimated?}
@@ -37,6 +60,13 @@ PlasmoidItem {
     readonly property string nextTimeFormatted: next ? Mawaqit.formatTime(next.time, use24h) : ""
 
     Plasmoid.icon: Qt.resolvedUrl("../icons/mosque.svg").toString()
+
+    // When the user opts into a custom background, drop the theme frame so our
+    // own rounded rectangle is the only thing drawn behind the content.
+    Plasmoid.backgroundHints: appCustomBackground
+                              ? PlasmaCore.Types.NoBackground
+                              : (PlasmaCore.Types.DefaultBackground
+                                 | PlasmaCore.Types.ConfigurableBackground)
 
     /* --------------------------- cache / fetch -------------------------- */
 
