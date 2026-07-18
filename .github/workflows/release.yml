@@ -3,7 +3,7 @@ name: Release
 on:
   push:
     branches: [main]
-    paths: ['version.txt']
+    paths: ['package/metadata.json']
   workflow_dispatch:
 
 permissions:
@@ -22,41 +22,33 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Read and validate version
+      - name: Read version from metadata.json
         id: v
         run: |
           set -euo pipefail
-          VERSION="$(tr -d '[:space:]' < version.txt)"
+          # package/metadata.json is the single source of truth for the version.
+          VERSION="$(python3 -c 'import json; print(json.load(open("package/metadata.json", encoding="utf-8"))["KPlugin"]["Version"])')"
           if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "::error file=version.txt::'$VERSION' is not x.y.z"
+            echo "::error file=package/metadata.json::KPlugin.Version '$VERSION' is not x.y.z"
             exit 1
           fi
           TAG="v$VERSION"
-          if git ls-remote --exit-code --tags origin "refs/tags/$TAG" >/dev/null 2>&1; then
-            echo "::error file=version.txt::tag $TAG already exists — bump version.txt"
-            exit 1
-          fi
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
-
-      - name: Check metadata.json is in sync
-        run: |
-          set -euo pipefail
-          python3 - "${{ steps.v.outputs.version }}" <<'PY'
-          import json, pathlib, sys
-          want = sys.argv[1]
-          got = json.loads(pathlib.Path("package/metadata.json")
-                           .read_text(encoding="utf-8"))["KPlugin"].get("Version")
-          if got != want:
-              print(f"::error file=package/metadata.json::KPlugin.Version is '{got}' but "
-                    f"version.txt says '{want}'. kpackagetool6 --upgrade compares "
-                    f"KPlugin.Version, so both must match. Run ./bump.sh {want}")
-              sys.exit(1)
-          print(f"in sync: {got}")
-          PY
+          # This job runs on any change to metadata.json, but most edits (a
+          # description tweak, a new translation) are not version bumps. Release
+          # only when the version is genuinely new — i.e. its tag doesn't exist
+          # yet. Otherwise finish green so unrelated metadata edits don't fail CI.
+          if git ls-remote --exit-code --tags origin "refs/tags/$TAG" >/dev/null 2>&1; then
+            echo "::notice::tag $TAG already exists — version unchanged, nothing to release"
+            echo "should_release=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "should_release=true" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Build .plasmoid
         id: build
+        if: steps.v.outputs.should_release == 'true'
         run: |
           set -euo pipefail
           ASSET="${PKGNAME}-${{ steps.v.outputs.version }}.plasmoid"
@@ -66,6 +58,7 @@ jobs:
           echo "asset=$ASSET" >> "$GITHUB_OUTPUT"
 
       - name: Verify the artifact
+        if: steps.v.outputs.should_release == 'true'
         run: |
           set -euo pipefail
           ASSET="${{ steps.build.outputs.asset }}"
@@ -92,6 +85,7 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Create release (gh creates the tag server-side)
+        if: steps.v.outputs.should_release == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
