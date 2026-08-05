@@ -18,6 +18,7 @@ KCM.SimpleKCM {
     property alias cfg_use24h: use24hCheck.checked
     property alias cfg_showSunrise: sunriseCheck.checked
     property alias cfg_showCountdownInPanel: countdownCheck.checked
+    property alias cfg_showHijriInPanel: hijriCheck.checked
     property alias cfg_refreshDays: refreshSpin.value
 
     // Cache keys: declared so the dialog doesn't warn; never touched here
@@ -382,6 +383,14 @@ KCM.SimpleKCM {
                 text: i18n("Show countdown in the panel")
                 // No effect on the desktop widget, which always shows the full
                 // table; only the panel strip has an inline countdown.
+                visible: Plasmoid.formFactor === PlasmaCore.Types.Horizontal
+                         || Plasmoid.formFactor === PlasmaCore.Types.Vertical
+            }
+
+            QQC2.CheckBox {
+                id: hijriCheck
+                text: i18n("Show the hijri date in the panel")
+                // Panel strip only; the popup/desktop view always shows it.
                 visible: Plasmoid.formFactor === PlasmaCore.Types.Horizontal
                          || Plasmoid.formFactor === PlasmaCore.Types.Vertical
             }

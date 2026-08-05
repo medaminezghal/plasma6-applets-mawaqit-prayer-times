@@ -19,6 +19,7 @@ MouseArea {
     readonly property bool ready: root.configured && root.calendar !== null
                                   && root.todayTimes !== null
     readonly property bool showCountdown: Plasmoid.configuration.showCountdownInPanel
+    readonly property bool showHijri: Plasmoid.configuration.showHijriInPanel
 
     // Prayer indices to render in full mode (sunrise optional)
     readonly property var shownIndices: Plasmoid.configuration.showSunrise
@@ -75,6 +76,7 @@ MouseArea {
             spacing: Kirigami.Units.largeSpacing
 
             PlasmaComponents3.Label {
+                visible: compact.showHijri
                 text: root.hijriDateText
                 font.family: compact.appFont
                 font.pointSize: Kirigami.Theme.defaultFont.pointSize * compact.appScale
@@ -83,6 +85,7 @@ MouseArea {
             }
 
             Kirigami.Separator {
+                visible: compact.showHijri
                 Layout.fillHeight: true
                 Layout.topMargin: Kirigami.Units.smallSpacing
                 Layout.bottomMargin: Kirigami.Units.smallSpacing
@@ -141,6 +144,7 @@ MouseArea {
             spacing: Kirigami.Units.largeSpacing
 
             PlasmaComponents3.Label {
+                visible: compact.showHijri
                 text: root.hijriDateText
                 font.family: compact.appFont
                 font.pointSize: Kirigami.Theme.defaultFont.pointSize * compact.appScale
@@ -149,6 +153,7 @@ MouseArea {
             }
 
             Kirigami.Separator {
+                visible: compact.showHijri
                 Layout.fillHeight: true
                 Layout.topMargin: Kirigami.Units.smallSpacing
                 Layout.bottomMargin: Kirigami.Units.smallSpacing
