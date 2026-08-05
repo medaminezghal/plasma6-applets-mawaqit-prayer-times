@@ -353,6 +353,14 @@ KCM.SimpleKCM {
                 }
             }
 
+            QQC2.CheckBox {
+                id: hijriCheck
+                text: i18n("Show the hijri date in the panel")
+                // Panel strip only; the popup/desktop view always shows it.
+                visible: Plasmoid.formFactor === PlasmaCore.Types.Horizontal
+                || Plasmoid.formFactor === PlasmaCore.Types.Vertical
+            }
+
             QQC2.ComboBox {
                 id: langCombo
                 Kirigami.FormData.label: i18n("Prayer names:")
@@ -383,14 +391,6 @@ KCM.SimpleKCM {
                 text: i18n("Show countdown in the panel")
                 // No effect on the desktop widget, which always shows the full
                 // table; only the panel strip has an inline countdown.
-                visible: Plasmoid.formFactor === PlasmaCore.Types.Horizontal
-                         || Plasmoid.formFactor === PlasmaCore.Types.Vertical
-            }
-
-            QQC2.CheckBox {
-                id: hijriCheck
-                text: i18n("Show the hijri date in the panel")
-                // Panel strip only; the popup/desktop view always shows it.
                 visible: Plasmoid.formFactor === PlasmaCore.Types.Horizontal
                          || Plasmoid.formFactor === PlasmaCore.Types.Vertical
             }
