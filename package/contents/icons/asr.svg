@@ -4,8 +4,8 @@
       .ColorScheme-Text { color:#232629; }
     </style>
   </defs>
-  <g class="ColorScheme-Text" transform="scale(0.55)">
-    <g fill="none" stroke="currentColor" stroke-width="2.2"
+  <g class="ColorScheme-Text" transform="translate(-4.016 -2.034) scale(0.6679)">
+    <g fill="none" stroke="currentColor" stroke-width="1.812"
        stroke-linecap="round" stroke-linejoin="round">
       <path d="M9 5 V34"/>
       <path d="M9 34 H36"/>
