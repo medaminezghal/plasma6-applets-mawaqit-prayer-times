@@ -28,8 +28,10 @@ MouseArea {
     readonly property string nextIcon: root.next !== null
         ? Qt.resolvedUrl("../icons/" + prayerIcons[root.next.index] + ".svg")
         : Qt.resolvedUrl("../icons/mosque.svg")
+    // Fill the panel thickness, leaving just enough clearance that the glyph
+    // never touches the panel edge
     readonly property real iconSide: Math.max(Kirigami.Units.iconSizes.small,
-                                              Math.round(compact.width * 0.62))
+                                              compact.width - Kirigami.Units.smallSpacing * 2)
 
     // Prayer indices to render in full mode (sunrise optional)
     readonly property var shownIndices: Plasmoid.configuration.showSunrise
