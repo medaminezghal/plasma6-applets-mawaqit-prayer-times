@@ -21,6 +21,16 @@ MouseArea {
     readonly property bool showCountdown: Plasmoid.configuration.showCountdownInPanel
     readonly property bool showHijri: Plasmoid.configuration.showHijriInPanel
 
+    // Vertical panel: the next prayer's own glyph, sized to leave room for
+    // the countdown line underneath
+    readonly property var prayerIcons: ["fajr", "shuruq", "dhuhr",
+                                        "asr", "maghrib", "isha"]
+    readonly property string nextIcon: root.next !== null
+        ? Qt.resolvedUrl("../icons/" + prayerIcons[root.next.index] + ".svg")
+        : Qt.resolvedUrl("../icons/mosque.svg")
+    readonly property real iconSide: Math.max(Kirigami.Units.iconSizes.small,
+                                              Math.round(compact.width * 0.62))
+
     // Prayer indices to render in full mode (sunrise optional)
     readonly property var shownIndices: Plasmoid.configuration.showSunrise
                                         ? [0, 1, 2, 3, 4, 5] : [0, 2, 3, 4, 5]
@@ -38,13 +48,44 @@ MouseArea {
         id: mainLoader
         anchors.centerIn: parent
         sourceComponent: {
+            if (compact.vertical) {
+                return verticalComp;
+            }
             if (!compact.ready) {
                 return placeholderComp;
             }
-            if (compact.fullMode) {
-                return compact.vertical ? fullVerticalComp : fullHorizontalComp;
+            return compact.fullMode ? fullHorizontalComp : nextHorizontalComp;
+        }
+    }
+
+    /* ---------------- vertical panel: glyph + minutes ------------------
+     * A vertical panel is only as wide as it is thick, nowhere near enough
+     * for a prayer name and a time side by side, so the strip is replaced
+     * by the next prayer's glyph with the minutes left underneath. The
+     * tooltip still carries the hijri date and the full countdown, and a
+     * click opens the same table the horizontal panel shows. */
+    Component {
+        id: verticalComp
+        ColumnLayout {
+            spacing: 0
+
+            Kirigami.Icon {
+                Layout.alignment: Qt.AlignHCenter
+                Layout.preferredWidth: compact.iconSide
+                Layout.preferredHeight: compact.iconSide
+                source: compact.nextIcon
+                isMask: true
+                color: root.appTextColor
             }
-            return compact.vertical ? nextVerticalComp : nextHorizontalComp;
+
+            PlasmaComponents3.Label {
+                Layout.alignment: Qt.AlignHCenter
+                visible: compact.ready && root.countdownMin !== ""
+                text: root.countdownMin
+                font.family: compact.appFont
+                font.pointSize: Kirigami.Theme.smallFont.pointSize * compact.appScale
+                color: root.appTextColor
+            }
         }
     }
 
@@ -112,29 +153,6 @@ MouseArea {
         }
     }
 
-    /* ----------------- next-prayer mode, vertical panel --------------- */
-    Component {
-        id: nextVerticalComp
-        ColumnLayout {
-            spacing: 0
-            PlasmaComponents3.Label {
-                Layout.alignment: Qt.AlignHCenter
-                text: root.nextName
-                font.family: compact.appFont
-                font.pointSize: Kirigami.Theme.smallFont.pointSize * compact.appScale
-                font.weight: Font.DemiBold
-                color: root.appTextColor
-            }
-            PlasmaComponents3.Label {
-                Layout.alignment: Qt.AlignHCenter
-                text: root.next ? root.next.time : ""
-                font.family: compact.appFont
-                font.pointSize: Kirigami.Theme.smallFont.pointSize * compact.appScale
-                color: root.appTextColor
-            }
-        }
-    }
-
     /* --------------- all-prayers mode, horizontal panel ----------------
      * One line: hijri date first, then every prayer. The next prayer gets
      * its remaining time (h:mm) right beneath it. */
@@ -194,31 +212,6 @@ MouseArea {
                         color: root.appAccentColor
                         opacity: 0.85
                     }
-                }
-            }
-        }
-    }
-
-    /* ---------------- all-prayers mode, vertical panel ----------------- */
-    Component {
-        id: fullVerticalComp
-        ColumnLayout {
-            spacing: 0
-            Repeater {
-                model: compact.shownIndices
-                delegate: PlasmaComponents3.Label {
-                    required property var modelData
-                    readonly property bool isNext: root.next !== null
-                                                   && root.next.index === modelData
-                                                   && !root.next.tomorrow
-                    Layout.alignment: Qt.AlignHCenter
-                    text: root.todayTimes[modelData]
-                    font.family: compact.appFont
-                    font.pointSize: Kirigami.Theme.smallFont.pointSize * compact.appScale
-                    font.weight: (isNext && root.appBoldNext) ? Font.Bold : Font.Normal
-                    color: isNext ? root.appAccentColor
-                                  : root.appTextColor
-                    opacity: modelData === 1 ? 0.65 : 1
                 }
             }
         }

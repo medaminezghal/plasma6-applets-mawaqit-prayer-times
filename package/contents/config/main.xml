@@ -37,7 +37,7 @@
             <default>true</default>
         </entry>
         <entry name="showHijriInPanel" type="Bool">
-            <label>Show the hijri date in the panel strip</label>
+            <label>Show the Hijri date in the horizontal panel strip</label>
             <default>true</default>
         </entry>
 

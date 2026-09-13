@@ -512,6 +512,16 @@ function formatCountdownHM(ms) {
     return h + ":" + (m < 10 ? "0" + m : m);
 }
 
+/**
+ * Minutes remaining, for the vertical panel strip. Bare digits, with no
+ * unit: a vertical panel is only as wide as it is thick, and the gap to
+ * the next prayer regularly runs past 100 minutes.
+ */
+function formatCountdownMin(ms) {
+    if (ms < 0) ms = 0;
+    return "" + Math.ceil(ms / 60000);
+}
+
 function formatCountdown(ms, langSetting) {
     if (ms < 0) ms = 0;
     var totalSec = Math.floor(ms / 1000);
