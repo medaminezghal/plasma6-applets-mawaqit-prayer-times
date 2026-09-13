@@ -391,43 +391,49 @@ KCM.SimpleKCM {
                     Layout.topMargin: Kirigami.Units.smallSpacing
                     text: i18n("Use icons instead of prayer names")
                 }
+            }
 
-                // Legend: shown whether or not the option is on, so the
-                // glyphs can be understood before committing to them.
-                // Mirrored for RTL prayer-name languages so the order matches
-                // the panel; the rest of the page keeps the system direction.
-                RowLayout {
-                    LayoutMirroring.enabled: Mawaqit.isArabic(page.cfg_labelLanguage)
-                    LayoutMirroring.childrenInherit: true
-                    Layout.leftMargin: Kirigami.Units.gridUnit
-                    spacing: Kirigami.Units.largeSpacing
+            // Legend for the prayer glyphs. In a horizontal panel it explains
+            // the option above, and is shown whether or not that option is on
+            // so the glyphs can be understood before committing to them. In a
+            // vertical panel the strip is always a glyph, so the legend stands
+            // on its own with no option attached. Mirrored for RTL
+            // prayer-name languages so the order matches the panel; the rest
+            // of the page keeps the system direction.
+            RowLayout {
+                visible: Plasmoid.formFactor === PlasmaCore.Types.Horizontal
+                         || Plasmoid.formFactor === PlasmaCore.Types.Vertical
+                LayoutMirroring.enabled: Mawaqit.isArabic(page.cfg_labelLanguage)
+                LayoutMirroring.childrenInherit: true
+                Layout.leftMargin: Kirigami.Units.gridUnit
+                Layout.bottomMargin: Kirigami.Units.smallSpacing
+                spacing: Kirigami.Units.largeSpacing
 
-                    Repeater {
-                        model: ["fajr", "shuruq", "dhuhr",
-                                "asr", "maghrib", "isha"]
+                Repeater {
+                    model: ["fajr", "shuruq", "dhuhr",
+                            "asr", "maghrib", "isha"]
 
-                        delegate: ColumnLayout {
-                            id: legendCell
-                            required property string modelData
-                            required property int index
-                            spacing: 0
+                    delegate: ColumnLayout {
+                        id: legendCell
+                        required property string modelData
+                        required property int index
+                        spacing: 0
 
-                            Kirigami.Icon {
-                                Layout.alignment: Qt.AlignHCenter
-                                Layout.preferredWidth: Kirigami.Units.iconSizes.smallMedium
-                                Layout.preferredHeight: Kirigami.Units.iconSizes.smallMedium
-                                source: Qt.resolvedUrl("../icons/"
-                                                       + legendCell.modelData + ".svg")
-                                isMask: true
-                                color: Kirigami.Theme.textColor
-                            }
+                        Kirigami.Icon {
+                            Layout.alignment: Qt.AlignHCenter
+                            Layout.preferredWidth: Kirigami.Units.iconSizes.smallMedium
+                            Layout.preferredHeight: Kirigami.Units.iconSizes.smallMedium
+                            source: Qt.resolvedUrl("../icons/"
+                                                   + legendCell.modelData + ".svg")
+                            isMask: true
+                            color: Kirigami.Theme.textColor
+                        }
 
-                            QQC2.Label {
-                                Layout.alignment: Qt.AlignHCenter
-                                text: page.prayerLabels[legendCell.index]
-                                font: Kirigami.Theme.smallFont
-                                opacity: 0.75
-                            }
+                        QQC2.Label {
+                            Layout.alignment: Qt.AlignHCenter
+                            text: page.prayerLabels[legendCell.index]
+                            font: Kirigami.Theme.smallFont
+                            opacity: 0.75
                         }
                     }
                 }
