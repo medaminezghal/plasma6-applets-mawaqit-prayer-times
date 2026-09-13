@@ -36,6 +36,10 @@
             <label>Show countdown next to the prayer name in the panel</label>
             <default>true</default>
         </entry>
+        <entry name="showHijriInPanel" type="Bool">
+            <label>Show the hijri date in the panel strip</label>
+            <default>true</default>
+        </entry>
 
         <!-- Hijri date (mosque-provided, cached from confData) -->
         <entry name="cachedHijriAdjustment" type="Int">

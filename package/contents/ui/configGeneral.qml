@@ -18,6 +18,7 @@ KCM.SimpleKCM {
     property alias cfg_use24h: use24hCheck.checked
     property alias cfg_showSunrise: sunriseCheck.checked
     property alias cfg_showCountdownInPanel: countdownCheck.checked
+    property alias cfg_showHijriInPanel: hijriCheck.checked
     property alias cfg_refreshDays: refreshSpin.value
 
     // Cache keys: declared so the dialog doesn't warn; never touched here
@@ -350,6 +351,14 @@ KCM.SimpleKCM {
                     checked: page.cfg_displayMode === "next"
                     onToggled: page.cfg_displayMode = "next"
                 }
+            }
+
+            QQC2.CheckBox {
+                id: hijriCheck
+                text: i18n("Show the hijri date in the panel")
+                // Panel strip only; the popup/desktop view always shows it.
+                visible: Plasmoid.formFactor === PlasmaCore.Types.Horizontal
+                || Plasmoid.formFactor === PlasmaCore.Types.Vertical
             }
 
             QQC2.ComboBox {
