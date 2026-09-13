@@ -14,6 +14,12 @@ exact timetable your mosque publishes on [mawaqit.net](https://mawaqit.net)
   panel; in a vertical panel, the next prayer's own icon with the minutes left
   underneath. Click either to expand the full table
 - **Two display modes**: full daily timetable, or only the next prayer
+- **Icons instead of names**: the horizontal strip can swap each prayer name
+  for its own glyph — first light, sunrise, zenith, shadow, sunset, night —
+  which frees up a lot of panel width. The settings show the six icons with
+  their names so nothing has to be guessed
+- **Hijri date**: shown in the popup, and optionally in the panel as either
+  the spelled-out form (2 ربيع الثاني 1448 هـ) or plain digits (02/04/1448)
 - **Appearance customization**: pick a custom font and adjust the text size,
   override the text and next-prayer accent colors, and give the widget a
   custom background with adjustable color, opacity, and corner radius — every
@@ -26,7 +32,7 @@ exact timetable your mosque publishes on [mawaqit.net](https://mawaqit.net)
   re-downloads only every few days to pick up schedule corrections
 - **Localized prayer names**: English, العربية, Français, or follow the
   system language
-- 12/24-hour format, optional sunrise (shuruq) row
+- 12/24-hour format, optional sunrise (Shuruq) row
 
 ## How it works
 
@@ -35,6 +41,12 @@ the full annual prayer calendar. The widget downloads your mosque's page
 once, extracts that object with a string-aware brace-balanced parser, and
 caches the calendar in the widget configuration. Everything else — today's
 times, the next prayer, the countdown — is computed locally.
+
+The Hijri date is computed with the same arithmetic calendar Mawaqit itself
+uses, and the `hijriAdjustment` your mosque publishes is applied on top of
+it. That matters because your mosque's admin calibrates that adjustment
+against what Mawaqit displays — so the widget shows the date on your
+mosque's own screens rather than a calendar that quietly disagrees with it.
 
 No account, no API key, no third-party server. Each installation talks
 directly to mawaqit.net roughly once a week.
