@@ -195,6 +195,10 @@ KCM.SimpleKCM {
 
         Kirigami.FormLayout {
             Layout.fillWidth: true
+            // Section rules span the whole form, so leave a gutter wide
+            // enough that they stop short of the scrollbar instead of
+            // running underneath it
+            Layout.rightMargin: Kirigami.Units.gridUnit
 
             Kirigami.Separator {
                 Kirigami.FormData.isSection: true
@@ -298,6 +302,10 @@ KCM.SimpleKCM {
 
         Kirigami.FormLayout {
             Layout.fillWidth: true
+            // Section rules span the whole form, so leave a gutter wide
+            // enough that they stop short of the scrollbar instead of
+            // running underneath it
+            Layout.rightMargin: Kirigami.Units.gridUnit
 
             QQC2.TextField {
                 id: slugField
@@ -351,6 +359,20 @@ KCM.SimpleKCM {
                     checked: page.cfg_displayMode === "next"
                     onToggled: page.cfg_displayMode = "next"
                 }
+
+                // Kept self-descriptive rather than trimmed to "Hijri date":
+                // a screen reader announces the checkbox label on its own,
+                // without the group label above it
+                QQC2.CheckBox {
+                    id: hijriCheck
+                    Layout.topMargin: Kirigami.Units.smallSpacing
+                    text: i18n("Show Hijri date")
+                }
+
+                QQC2.CheckBox {
+                    id: countdownCheck
+                    text: i18n("Show countdown")
+                }
             }
 
             QQC2.ComboBox {
@@ -375,22 +397,7 @@ KCM.SimpleKCM {
 
             QQC2.CheckBox {
                 id: sunriseCheck
-                text: i18n("Show sunrise (shuruq)")
-            }
-
-            // Both options below only reach the horizontal panel strip. The
-            // popup and the desktop widget always show them, and a vertical
-            // panel has room for neither.
-            QQC2.CheckBox {
-                id: hijriCheck
-                text: i18n("Show Hijri date in the panel")
-                visible: Plasmoid.formFactor === PlasmaCore.Types.Horizontal
-            }
-
-            QQC2.CheckBox {
-                id: countdownCheck
-                text: i18n("Show countdown in the panel")
-                visible: Plasmoid.formFactor === PlasmaCore.Types.Horizontal
+                text: i18n("Show sunrise (Shuruq)")
             }
 
             /* ----------------------- Updates ------------------------ */
