@@ -393,8 +393,12 @@ KCM.SimpleKCM {
                 }
 
                 // Legend: shown whether or not the option is on, so the
-                // glyphs can be understood before committing to them
+                // glyphs can be understood before committing to them.
+                // Mirrored for RTL prayer-name languages so the order matches
+                // the panel; the rest of the page keeps the system direction.
                 RowLayout {
+                    LayoutMirroring.enabled: Mawaqit.isArabic(page.cfg_labelLanguage)
+                    LayoutMirroring.childrenInherit: true
                     Layout.leftMargin: Kirigami.Units.gridUnit
                     spacing: Kirigami.Units.largeSpacing
 
@@ -472,6 +476,7 @@ KCM.SimpleKCM {
 
             QQC2.Label {
                 Layout.fillWidth: true
+                Layout.maximumWidth: Kirigami.Units.gridUnit * 22
                 text: i18n("The whole year is cached locally, so the widget works offline. Re-downloading only picks up schedule corrections and the mosque's Hijri date adjustment.")
                 font.pointSize: Kirigami.Theme.smallFont.pointSize
                 opacity: 0.7
