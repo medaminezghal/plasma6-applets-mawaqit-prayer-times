@@ -49,6 +49,7 @@ PlasmoidItem {
     property var next: null            // {index, time, date, tomorrow, estimated?}
     property string countdown: ""
     property string countdownHM: ""
+    property string countdownMin: ""
     property string hijriDateText: ""
     property bool fetching: false
     property string errorMessage: ""
@@ -160,6 +161,7 @@ PlasmoidItem {
         if (calendar === null) {
             next = null;
             countdown = "";
+            countdownMin = "";
             return;
         }
         if (next === null || now >= next.date) {
@@ -169,6 +171,7 @@ PlasmoidItem {
             ? Mawaqit.formatCountdown(next.date - now, Plasmoid.configuration.labelLanguage)
             : "";
         countdownHM = next ? Mawaqit.formatCountdownHM(next.date - now) : "";
+        countdownMin = next ? Mawaqit.formatCountdownMin(next.date - now) : "";
     }
 
     Timer {

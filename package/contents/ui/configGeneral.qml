@@ -331,13 +331,13 @@ KCM.SimpleKCM {
                 Kirigami.FormData.label: i18n("Display")
             }
 
-            // Only meaningful in a panel: it switches the inline panel strip
-            // between all prayers and the next one. On the desktop the widget
-            // always shows the full table, so the option is hidden there.
+            // Only meaningful in a horizontal panel: it switches the inline
+            // panel strip between all prayers and the next one. The desktop
+            // widget always shows the full table and a vertical panel shows
+            // the next prayer's glyph, so the option is hidden in both.
             ColumnLayout {
                 Kirigami.FormData.label: i18n("Panel shows:")
                 visible: Plasmoid.formFactor === PlasmaCore.Types.Horizontal
-                         || Plasmoid.formFactor === PlasmaCore.Types.Vertical
                 spacing: Kirigami.Units.smallSpacing
 
                 QQC2.RadioButton {
@@ -351,14 +351,6 @@ KCM.SimpleKCM {
                     checked: page.cfg_displayMode === "next"
                     onToggled: page.cfg_displayMode = "next"
                 }
-            }
-
-            QQC2.CheckBox {
-                id: hijriCheck
-                text: i18n("Show the hijri date in the panel")
-                // Panel strip only; the popup/desktop view always shows it.
-                visible: Plasmoid.formFactor === PlasmaCore.Types.Horizontal
-                || Plasmoid.formFactor === PlasmaCore.Types.Vertical
             }
 
             QQC2.ComboBox {
@@ -386,13 +378,19 @@ KCM.SimpleKCM {
                 text: i18n("Show sunrise (shuruq)")
             }
 
+            // Both options below only reach the horizontal panel strip. The
+            // popup and the desktop widget always show them, and a vertical
+            // panel has room for neither.
+            QQC2.CheckBox {
+                id: hijriCheck
+                text: i18n("Show Hijri date in the panel")
+                visible: Plasmoid.formFactor === PlasmaCore.Types.Horizontal
+            }
+
             QQC2.CheckBox {
                 id: countdownCheck
                 text: i18n("Show countdown in the panel")
-                // No effect on the desktop widget, which always shows the full
-                // table; only the panel strip has an inline countdown.
                 visible: Plasmoid.formFactor === PlasmaCore.Types.Horizontal
-                         || Plasmoid.formFactor === PlasmaCore.Types.Vertical
             }
 
             /* ----------------------- Updates ------------------------ */
@@ -413,7 +411,7 @@ KCM.SimpleKCM {
 
             QQC2.Label {
                 Layout.fillWidth: true
-                text: i18n("The whole year is cached locally, so the widget works offline. Re-downloading only picks up schedule corrections and the mosque's hijri date adjustment.")
+                text: i18n("The whole year is cached locally, so the widget works offline. Re-downloading only picks up schedule corrections and the mosque's Hijri date adjustment.")
                 font.pointSize: Kirigami.Theme.smallFont.pointSize
                 opacity: 0.7
                 wrapMode: Text.WordWrap

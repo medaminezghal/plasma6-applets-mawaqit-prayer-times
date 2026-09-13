@@ -10,8 +10,9 @@ exact timetable your mosque publishes on [mawaqit.net](https://mawaqit.net)
 
 ## Features
 
-- **Panel-friendly compact view**: next prayer + live countdown in your panel
-  (horizontal and vertical panels supported); click to expand
+- **Panel-friendly compact view**: next prayer + live countdown in a horizontal
+  panel; in a vertical panel, the next prayer's own icon with the minutes left
+  underneath. Click either to expand the full table
 - **Two display modes**: full daily timetable, or only the next prayer
 - **Appearance customization**: pick a custom font and adjust the text size,
   override the text and next-prayer accent colors, and give the widget a
