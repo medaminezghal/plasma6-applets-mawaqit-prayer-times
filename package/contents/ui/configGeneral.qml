@@ -19,6 +19,8 @@ KCM.SimpleKCM {
     property alias cfg_showSunrise: sunriseCheck.checked
     property alias cfg_showCountdownInPanel: countdownCheck.checked
     property alias cfg_showHijriInPanel: hijriCheck.checked
+    property alias cfg_numericHijriInPanel: numericHijriCheck.checked
+    property alias cfg_usePrayerIconsInPanel: iconsCheck.checked
     property alias cfg_refreshDays: refreshSpin.value
 
     // Cache keys: declared so the dialog doesn't warn; never touched here
@@ -187,6 +189,9 @@ KCM.SimpleKCM {
 
     Component.onDestruction: stopGps()
     Component.onCompleted: slugField.text = cfg_mosqueSlug
+
+    // Prayer names in the configured language, for the icon legend below
+    readonly property var prayerLabels: Mawaqit.prayerNames(page.cfg_labelLanguage)
 
     /* ============================= UI ================================ */
 
@@ -370,8 +375,57 @@ KCM.SimpleKCM {
                 }
 
                 QQC2.CheckBox {
+                    id: numericHijriCheck
+                    Layout.leftMargin: Kirigami.Units.gridUnit
+                    enabled: hijriCheck.checked
+                    text: i18n("As digits (01/04/1448)")
+                }
+
+                QQC2.CheckBox {
                     id: countdownCheck
                     text: i18n("Show countdown")
+                }
+
+                QQC2.CheckBox {
+                    id: iconsCheck
+                    Layout.topMargin: Kirigami.Units.smallSpacing
+                    text: i18n("Use icons instead of prayer names")
+                }
+
+                // Legend: shown whether or not the option is on, so the
+                // glyphs can be understood before committing to them
+                RowLayout {
+                    Layout.leftMargin: Kirigami.Units.gridUnit
+                    spacing: Kirigami.Units.largeSpacing
+
+                    Repeater {
+                        model: ["fajr", "shuruq", "dhuhr",
+                                "asr", "maghrib", "isha"]
+
+                        delegate: ColumnLayout {
+                            id: legendCell
+                            required property string modelData
+                            required property int index
+                            spacing: 0
+
+                            Kirigami.Icon {
+                                Layout.alignment: Qt.AlignHCenter
+                                Layout.preferredWidth: Kirigami.Units.iconSizes.smallMedium
+                                Layout.preferredHeight: Kirigami.Units.iconSizes.smallMedium
+                                source: Qt.resolvedUrl("../icons/"
+                                                       + legendCell.modelData + ".svg")
+                                isMask: true
+                                color: Kirigami.Theme.textColor
+                            }
+
+                            QQC2.Label {
+                                Layout.alignment: Qt.AlignHCenter
+                                text: page.prayerLabels[legendCell.index]
+                                font: Kirigami.Theme.smallFont
+                                opacity: 0.75
+                            }
+                        }
+                    }
                 }
             }
 
