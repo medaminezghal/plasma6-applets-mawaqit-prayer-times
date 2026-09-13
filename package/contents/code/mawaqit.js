@@ -265,64 +265,103 @@ function reverseGeocode(lat, lon, onSuccess, onError) {
 }
 
 /* --------------------------- hijri calendar --------------------------- *
- * Tabular ("Kuwaiti") algorithm with a -1 day baseline correction, which
- * matches Umm al-Qura on recent anchor dates (1 Ramadan 1446 = 2025-03-01,
- * 1 Shawwal 1445 = 2024-04-10). The mosque's own hijriAdjustment from
- * confData plus the user's manual offset are applied on top, since local
- * (e.g. Tunisian) announcements can differ by a day from Umm al-Qura.
+ * Mawaqit renders its own hijri date with the Kuwaiti arithmetic
+ * algorithm: a 30-year cycle of 10631 days with mean 29.5-day months, so
+ * odd months run 30 days and even months 29. It never consults an
+ * observation-based calendar, which is exactly why every mosque page
+ * carries a `hijriAdjustment` for the admin to correct it against the
+ * local announcement.
+ *
+ * What follows is a port of that algorithm, taken from mawaqit.net's own
+ * bundle. Matching it is not cosmetic: `hijriAdjustment` is calibrated by
+ * the admin against what Mawaqit displays, so it only means anything when
+ * applied to the same base calendar. The Umm al-Qura table this replaced
+ * disagreed with the Kuwaiti algorithm on roughly 40% of days, which made
+ * the cached adjustment worse than useless.
  * --------------------------------------------------------------------- */
 
-/*
- * Umm al-Qura calendar table, generated from the reference `hijridate`
- * package. UAQ_MONTHS[i] is "1" when hijri month i (counting from
- * 1 Muharram 1440 = 2018-09-11 CE) has 30 days, "0" for 29. Covers
- * 1440-1490 AH (~2018-2067 CE). The tabular algorithm is only a fallback
- * outside that range, since it deviates from Umm al-Qura by up to +-2
- * days depending on the month.
- */
-var UAQ_START_YEAR = 1440;
-var UAQ_EPOCH_ORDINAL = 736948; // proleptic Gregorian ordinal of 2018-09-11
-var UAQ_MONTHS = "010111010100101011011010010101011010101010101011010110010101011101001001011101100100101110101010010110110101001010110110101001010110110100101010111010010101011100101010011101010101001101011010100101011101010010011011101001001101110100100110110101010011010110101010101010101101010010110110101001010111010100100111101010010101101101001010101101010101001101101100100110101110010010110110101010010110101101001010110110100101010111010010010111011001001011011100100101101101010010101101011001010101011011010010101101101001001101110100100110110110010011010111001010101011010101001011011010100101011101010010101101101001";
+var HIJRI_CYCLE_DAYS = 10631;              // days in the 30-year cycle
+var HIJRI_MEAN_YEAR = HIJRI_CYCLE_DAYS / 30;
+var HIJRI_EPOCH_JD = 1948084;              // julian day of 1 Muharram 1 AH
 
-function _ordinal(d) {
-    return Math.floor(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86400000)
-           + 719163; // ordinal of 1970-01-01
-}
-
-function _tabularHijri(d) {
-    // Kuwaiti arithmetic algorithm, -1 baseline (approximate; fallback only)
-    var jd = _ordinal(d) + 1721425 - 1;
-    var days = jd - 1948440 + 10632;
-    var n = Math.floor((days - 1) / 10631);
-    days = days - 10631 * n + 354;
-    var j = (Math.floor((10985 - days) / 5316)) * (Math.floor((50 * days) / 17719))
-          + (Math.floor(days / 5670)) * (Math.floor((43 * days) / 15238));
-    days = days - (Math.floor((30 - j) / 15)) * (Math.floor((17719 * j) / 50))
-                - (Math.floor(j / 16)) * (Math.floor((15238 * j) / 43)) + 29;
-    var month = Math.floor((24 * days) / 709);
-    var day = days - Math.floor((709 * month) / 24);
-    var year = 30 * n + j - 30;
-    return { year: year, month: month, day: day };
-}
-
-function gregorianToHijri(date, adjustment) {
-    var d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-    d.setDate(d.getDate() + (adjustment || 0));
-    var off = _ordinal(d) - UAQ_EPOCH_ORDINAL;
-    if (off >= 0) {
-        for (var idx = 0; idx < UAQ_MONTHS.length; idx++) {
-            var len = UAQ_MONTHS[idx] === "1" ? 30 : 29;
-            if (off < len) {
-                return {
-                    year: UAQ_START_YEAR + Math.floor(idx / 12),
-                    month: (idx % 12) + 1,
-                    day: off + 1
-                };
-            }
-            off -= len;
-        }
+function _julianDay(d) {
+    var day = d.getDate();
+    var month = d.getMonth() + 1;
+    var year = d.getFullYear();
+    if (month < 3) {
+        year -= 1;
+        month += 12;
     }
-    return _tabularHijri(d);
+    var century = Math.floor(year / 100);
+    var gregorianOffset = year < 1583
+                          ? 0 : 2 - century + Math.floor(century / 4);
+    return Math.floor(365.25 * (year + 4716))
+           + Math.floor(30.6001 * (month + 1))
+           + day + gregorianOffset - 1524;
+}
+
+/* The bare arithmetic, with no adjustment and no force30 applied. */
+function _kuwaitiHijri(d) {
+    var days = _julianDay(d) - HIJRI_EPOCH_JD;
+    var cycles = Math.floor(days / HIJRI_CYCLE_DAYS);
+    days -= HIJRI_CYCLE_DAYS * cycles;
+
+    var yearInCycle = Math.floor((days - 0.1335) / HIJRI_MEAN_YEAR);
+    var year = 30 * cycles + yearInCycle;
+    days -= Math.floor(yearInCycle * HIJRI_MEAN_YEAR + 0.1335);
+
+    var month = Math.floor((days + 28.5001) / 29.5);
+    if (month === 13) {
+        month = 12;
+    }
+    return {
+        year: year,
+        month: month,
+        day: days - Math.floor(29.5001 * month - 29)
+    };
+}
+
+/**
+ * date        Gregorian day to convert.
+ * adjustment  The mosque's hijriAdjustment, in days.
+ * force30     The mosque's hijriDateForceTo30 flag: the moon was not
+ *             sighted, so the admin holds the running month at 30 days.
+ */
+function gregorianToHijri(date, adjustment, force30) {
+    var d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    // setDate rather than adding 86400000 ms as Mawaqit does: a raw
+    // millisecond offset can cross a DST boundary and land on the wrong
+    // local day
+    d.setDate(d.getDate() + (adjustment || 0));
+
+    var h = _kuwaitiHijri(d);
+    if (!force30) {
+        return h;
+    }
+
+    // A month can only be held at 30 days if the arithmetic gave it 29,
+    // so look at the arithmetic month that just ended. While we are still
+    // inside a held 29-day month the displayed day is unchanged; once the
+    // arithmetic rolls over, every day of the new month shifts back by one
+    // so its day 1 becomes day 30 of the held month. Shifting the whole
+    // month is what keeps the sequence continuous — the previous code
+    // remapped only day 1, so the display skipped from 30 straight to 2.
+    var endOfPrevMonth = new Date(d.getTime());
+    endOfPrevMonth.setDate(endOfPrevMonth.getDate() - h.day);
+    if (_kuwaitiHijri(endOfPrevMonth).day !== 29) {
+        return h;
+    }
+
+    h.day -= 1;
+    if (h.day === 0) {
+        h.month -= 1;
+        if (h.month === 0) {
+            h.month = 12;
+            h.year -= 1;
+        }
+        h.day = 30;
+    }
+    return h;
 }
 
 var HIJRI_MONTHS = {
@@ -353,15 +392,7 @@ function hijriMonthNames(langSetting) {
 }
 
 function formatHijri(date, adjustment, force30, langSetting) {
-    var h = gregorianToHijri(date, adjustment);
-    // hijriDateForceTo30: the admin extends the current month to 30 days
-    // (moon not sighted). If the arithmetic already rolled to day 1 of the
-    // next month, display day 30 of the previous month instead.
-    if (force30 && h.day === 1) {
-        var pm = h.month - 1, py = h.year;
-        if (pm === 0) { pm = 12; py -= 1; }
-        h = { year: py, month: pm, day: 30 };
-    }
+    var h = gregorianToHijri(date, adjustment, force30);
     var months = hijriMonthNames(langSetting);
     var isArabic = (langSetting === "ar")
         || (langSetting === "auto" && Qt.locale().name.substring(0, 2) === "ar");
