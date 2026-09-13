@@ -391,6 +391,17 @@ function hijriMonthNames(langSetting) {
     return HIJRI_MONTHS[lang];
 }
 
+/**
+ * The same hijri date as formatHijri, rendered as DD/MM/YYYY digits for
+ * the panel strip, where the spelled-out month name is too wide.
+ */
+function formatHijriNumeric(date, adjustment, force30) {
+    var h = gregorianToHijri(date, adjustment, force30);
+    var dd = h.day < 10 ? "0" + h.day : "" + h.day;
+    var mm = h.month < 10 ? "0" + h.month : "" + h.month;
+    return dd + "/" + mm + "/" + h.year;
+}
+
 function formatHijri(date, adjustment, force30, langSetting) {
     var h = gregorianToHijri(date, adjustment, force30);
     var months = hijriMonthNames(langSetting);

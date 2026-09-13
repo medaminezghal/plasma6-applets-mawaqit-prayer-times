@@ -26,8 +26,17 @@ MouseArea {
     readonly property var prayerIcons: ["fajr", "shuruq", "dhuhr",
                                         "asr", "maghrib", "isha"]
     readonly property string nextIcon: root.next !== null
-        ? Qt.resolvedUrl("../icons/" + prayerIcons[root.next.index] + ".svg")
+        ? prayerIcon(root.next.index)
         : Qt.resolvedUrl("../icons/mosque.svg")
+    function prayerIcon(index) {
+        return Qt.resolvedUrl("../icons/" + prayerIcons[index] + ".svg");
+    }
+
+    // Horizontal strip: glyphs in place of prayer names, and the hijri date
+    // as digits. Both are panel-only; the popup is never affected.
+    readonly property bool useIcons: Plasmoid.configuration.usePrayerIconsInPanel
+    readonly property string hijriText: Plasmoid.configuration.numericHijriInPanel
+                                        ? root.hijriDateNumeric : root.hijriDateText
     // Fill the panel thickness, leaving just enough clearance that the glyph
     // never touches the panel edge
     readonly property real iconSide: Math.max(Kirigami.Units.iconSizes.small,
@@ -120,7 +129,7 @@ MouseArea {
 
             PlasmaComponents3.Label {
                 visible: compact.showHijri
-                text: root.hijriDateText
+                text: compact.hijriText
                 font.family: compact.appFont
                 font.pointSize: Kirigami.Theme.defaultFont.pointSize * compact.appScale
                 font.weight: Font.DemiBold
@@ -136,8 +145,19 @@ MouseArea {
 
             RowLayout {
                 spacing: Kirigami.Units.smallSpacing
+                Kirigami.Icon {
+                    visible: compact.useIcons && root.next !== null
+                    Layout.preferredWidth: nextLabel.implicitHeight
+                    Layout.preferredHeight: nextLabel.implicitHeight
+                    source: root.next !== null ? compact.prayerIcon(root.next.index) : ""
+                    isMask: true
+                    color: root.appTextColor
+                }
                 PlasmaComponents3.Label {
-                    text: root.nextName + " " + root.nextTimeFormatted
+                    id: nextLabel
+                    text: compact.useIcons
+                          ? root.nextTimeFormatted
+                          : root.nextName + " " + root.nextTimeFormatted
                     font.family: compact.appFont
                     font.pointSize: Kirigami.Theme.defaultFont.pointSize * compact.appScale
                     font.weight: Font.DemiBold
@@ -165,7 +185,7 @@ MouseArea {
 
             PlasmaComponents3.Label {
                 visible: compact.showHijri
-                text: root.hijriDateText
+                text: compact.hijriText
                 font.family: compact.appFont
                 font.pointSize: Kirigami.Theme.defaultFont.pointSize * compact.appScale
                 font.weight: Font.DemiBold
@@ -181,38 +201,62 @@ MouseArea {
 
             Repeater {
                 model: compact.shownIndices
-                delegate: Column {
+                delegate: RowLayout {
                     id: prayerCell
                     required property var modelData
                     readonly property bool isNext: root.next !== null
                                                    && root.next.index === modelData
                                                    && !root.next.tomorrow
                     Layout.alignment: Qt.AlignVCenter
-                    spacing: -5  // hug the countdown against the prayer label
+                    spacing: Kirigami.Units.smallSpacing
+                    opacity: modelData === 1 ? 0.7 : 1
 
-                    PlasmaComponents3.Label {
-                        id: cellLabel
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        text: root.names[prayerCell.modelData] + " "
-                              + Mawaqit.formatTime(root.todayTimes[prayerCell.modelData], root.use24h)
-                        font.family: compact.appFont
-                        font.weight: (prayerCell.isNext && root.appBoldNext) ? Font.Bold : Font.Normal
-                        font.pointSize: Kirigami.Theme.defaultFont.pointSize
-                                        * (prayerCell.isNext ? 1.15 : 1) * compact.appScale
+                    // Sibling of the text column, not part of it: the next
+                    // prayer's cell grows downwards by a countdown line, and
+                    // an icon inside the column would ride up half a line and
+                    // break alignment with the other prayers' icons
+                    Kirigami.Icon {
+                        visible: compact.useIcons
+                        Layout.alignment: Qt.AlignVCenter
+                        Layout.preferredWidth: cellLabel.implicitHeight
+                        Layout.preferredHeight: cellLabel.implicitHeight
+                        source: compact.prayerIcon(prayerCell.modelData)
+                        isMask: true
                         color: prayerCell.isNext ? root.appAccentColor
                                                  : root.appTextColor
-                        opacity: prayerCell.modelData === 1 ? 0.7 : 1
                     }
 
-                    PlasmaComponents3.Label {
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        visible: prayerCell.isNext && compact.showCountdown
-                                 && root.countdownHM !== ""
-                        text: Mawaqit.inCountdown(root.countdownHM, Plasmoid.configuration.labelLanguage)
-                        font.family: compact.appFont
-                        font.pointSize: Kirigami.Theme.smallFont.pointSize * compact.appScale
-                        color: root.appAccentColor
-                        opacity: 0.85
+                    Column {
+                        Layout.alignment: Qt.AlignVCenter
+                        spacing: -5  // hug the countdown against the prayer label
+
+                        PlasmaComponents3.Label {
+                            id: cellLabel
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            text: (compact.useIcons
+                                   ? "" : root.names[prayerCell.modelData] + " ")
+                                  + Mawaqit.formatTime(root.todayTimes[prayerCell.modelData],
+                                                       root.use24h)
+                            font.family: compact.appFont
+                            font.weight: (prayerCell.isNext && root.appBoldNext)
+                                         ? Font.Bold : Font.Normal
+                            font.pointSize: Kirigami.Theme.defaultFont.pointSize
+                                            * (prayerCell.isNext ? 1.15 : 1) * compact.appScale
+                            color: prayerCell.isNext ? root.appAccentColor
+                                                     : root.appTextColor
+                        }
+
+                        PlasmaComponents3.Label {
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            visible: prayerCell.isNext && compact.showCountdown
+                                     && root.countdownHM !== ""
+                            text: Mawaqit.inCountdown(root.countdownHM,
+                                                      Plasmoid.configuration.labelLanguage)
+                            font.family: compact.appFont
+                            font.pointSize: Kirigami.Theme.smallFont.pointSize * compact.appScale
+                            color: root.appAccentColor
+                            opacity: 0.85
+                        }
                     }
                 }
             }

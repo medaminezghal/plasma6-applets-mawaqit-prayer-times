@@ -40,6 +40,14 @@
             <label>Show the Hijri date in the horizontal panel strip</label>
             <default>true</default>
         </entry>
+        <entry name="numericHijriInPanel" type="Bool">
+            <label>Render the panel Hijri date as DD/MM/YYYY digits</label>
+            <default>false</default>
+        </entry>
+        <entry name="usePrayerIconsInPanel" type="Bool">
+            <label>Use prayer glyphs instead of names in the horizontal strip</label>
+            <default>false</default>
+        </entry>
 
         <!-- Hijri date (mosque-provided, cached from confData) -->
         <entry name="cachedHijriAdjustment" type="Int">

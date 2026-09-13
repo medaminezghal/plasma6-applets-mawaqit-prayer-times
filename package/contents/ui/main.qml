@@ -51,6 +51,7 @@ PlasmoidItem {
     property string countdownHM: ""
     property string countdownMin: ""
     property string hijriDateText: ""
+    property string hijriDateNumeric: ""
     property bool fetching: false
     property string errorMessage: ""
     property int lastComputedDay: -1
@@ -144,6 +145,10 @@ PlasmoidItem {
                 Plasmoid.configuration.cachedHijriAdjustment,
                 Plasmoid.configuration.cachedHijriForce30,
                 Plasmoid.configuration.labelLanguage);
+            hijriDateNumeric = Mawaqit.formatHijriNumeric(
+                now,
+                Plasmoid.configuration.cachedHijriAdjustment,
+                Plasmoid.configuration.cachedHijriForce30);
             if (calendar !== null
                     && Plasmoid.configuration.cachedYear !== now.getFullYear()) {
                 refetch(true); // year rollover
