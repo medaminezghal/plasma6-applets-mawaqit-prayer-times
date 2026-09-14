@@ -46,9 +46,71 @@ MouseArea {
     readonly property var shownIndices: Plasmoid.configuration.showSunrise
                                         ? [0, 1, 2, 3, 4, 5] : [0, 2, 3, 4, 5]
 
-    // Appearance shortcuts (resolved in main.qml)
+    // Appearance shortcuts (resolved in main.qml). The font-size slider is
+    // deliberately not used here: inside a panel the text has to fit the
+    // panel's thickness, so the size follows the panel, not the slider.
+    // The slider still scales the expanded view.
     readonly property string appFont: root.appFontFamily
-    readonly property real appScale: root.appFontScale
+
+    /* ------------------ panel-driven text sizing -----------------------
+     * Same recipe as Plasma's digital clock (DigitalClock.qml, state
+     * "horizontalPanel"): a label's font.pixelSize is set equal to the box
+     * height it is given, the boxes are cut from the panel thickness -
+     * 0.71 of it for a single line, 0.56 for the upper of two lines and
+     * 0.8 of that for the lower one, so 0.56 + 0.45 fills the thickness -
+     * and everything is capped at three times the default font size. The
+     * numbers come with the clock's own testing behind them; a family with
+     * generous line spacing simply overhangs its box a little instead of
+     * hanging out of the panel. */
+    readonly property real panelThickness: vertical ? compact.width : compact.height
+    readonly property real maxPanelPx: 3 * Kirigami.Theme.defaultFont.pixelSize
+    readonly property real oneLinePx: Math.min(panelThickness * 0.71, maxPanelPx)
+    readonly property real upperLinePx: Math.min(panelThickness * 0.56, maxPanelPx)
+    readonly property real lowerLinePx: 0.8 * upperLinePx
+    // Vertical panel: minutes line under the icon, between the tiny
+    // fitted label and a full single line
+    readonly property real verticalLinePx: Math.min(Math.round(panelThickness * 0.42),
+                                                    maxPanelPx)
+
+    // In "all prayers" mode the next prayer carries its countdown underneath,
+    // so it is the two-line case; the other prayers use a slightly smaller
+    // single line so the next one stays the largest.
+    readonly property bool twoLines: fullMode && showCountdown
+    readonly property real nextPx: twoLines ? upperLinePx : oneLinePx
+    readonly property real basePx: nextPx / 1.15
+
+    // Icons have one size, cut from the panel thickness alone, so neither
+    // the font family nor the display mode changes them
+    readonly property int panelIconSide: Math.round(Math.min(panelThickness * 0.6,
+                                                             maxPanelPx * 1.3))
+
+    /* ---------------------- optical centring ---------------------------
+     * Centring a label centres its line box, and where the digits' ink sits
+     * inside that box depends on the family: fonts with a tall ascender or
+     * big descender area put the digits visibly below the middle. Measure
+     * it once for the chosen family - baseline position from a hidden Text,
+     * ink bounds from TextMetrics - and pad every label so the ink, not the
+     * box, lands on the centre line. */
+    Text {
+        id: inkProbe
+        visible: false
+        text: "0123456789"
+        font.family: compact.appFont
+        font.pixelSize: 100
+    }
+    TextMetrics {
+        id: inkBounds
+        font: inkProbe.font
+        text: inkProbe.text
+    }
+    // Pixels the ink sits below the centre of its line box, per pixel of
+    // font size (negative: above)
+    readonly property real inkShift: (inkProbe.baselineOffset
+                                      + inkBounds.tightBoundingRect.y
+                                      + inkBounds.tightBoundingRect.height / 2
+                                      - inkProbe.implicitHeight / 2) / 100
+    function inkTopPad(px) { return Math.max(0, Math.round(-2 * inkShift * px)); }
+    function inkBottomPad(px) { return Math.max(0, Math.round(2 * inkShift * px)); }
 
     Layout.minimumWidth: vertical ? 0 : mainLoader.implicitWidth + Kirigami.Units.smallSpacing * 2
     Layout.minimumHeight: vertical ? mainLoader.implicitHeight + Kirigami.Units.smallSpacing * 2 : 0
@@ -91,10 +153,20 @@ MouseArea {
 
             PlasmaComponents3.Label {
                 Layout.alignment: Qt.AlignHCenter
+                // Minutes line under the icon, cut from the panel thickness
+                // like the horizontal sizes; HorizontalFit only steps in if
+                // the string is wider than the panel
+                Layout.preferredWidth: compact.panelThickness
+                Layout.preferredHeight: compact.verticalLinePx
+                horizontalAlignment: Text.AlignHCenter
+                verticalAlignment: Text.AlignVCenter
+                fontSizeMode: Text.HorizontalFit
+                minimumPixelSize: 6
                 visible: compact.ready && root.countdownMin !== ""
                 text: root.countdownMin
                 font.family: compact.appFont
-                font.pointSize: Kirigami.Theme.smallFont.pointSize * compact.appScale
+                font.pixelSize: compact.verticalLinePx
+                font.weight: Font.DemiBold
                 color: root.appTextColor
             }
         }
@@ -125,13 +197,18 @@ MouseArea {
     Component {
         id: nextHorizontalComp
         RowLayout {
-            spacing: Kirigami.Units.largeSpacing
+            spacing: Kirigami.Units.smallSpacing * 1.5
 
             PlasmaComponents3.Label {
+                Layout.alignment: Qt.AlignVCenter
+                Layout.preferredHeight: compact.oneLinePx
+                verticalAlignment: Text.AlignVCenter
+                topPadding: compact.inkTopPad(font.pixelSize)
+                bottomPadding: compact.inkBottomPad(font.pixelSize)
                 visible: compact.showHijri
                 text: compact.hijriText
                 font.family: compact.appFont
-                font.pointSize: Kirigami.Theme.defaultFont.pointSize * compact.appScale
+                font.pixelSize: compact.oneLinePx
                 font.weight: Font.DemiBold
                 color: root.appTextColor
             }
@@ -144,30 +221,42 @@ MouseArea {
             }
 
             RowLayout {
+                Layout.alignment: Qt.AlignVCenter
                 spacing: Kirigami.Units.smallSpacing
                 Kirigami.Icon {
                     visible: compact.useIcons && root.next !== null
-                    Layout.preferredWidth: nextLabel.implicitHeight
-                    Layout.preferredHeight: nextLabel.implicitHeight
+                    Layout.alignment: Qt.AlignVCenter
+                    Layout.preferredWidth: compact.panelIconSide
+                    Layout.preferredHeight: compact.panelIconSide
                     source: root.next !== null ? compact.prayerIcon(root.next.index) : ""
                     isMask: true
                     color: root.appTextColor
                 }
                 PlasmaComponents3.Label {
                     id: nextLabel
+                    Layout.alignment: Qt.AlignVCenter
+                    Layout.preferredHeight: compact.oneLinePx
+                    verticalAlignment: Text.AlignVCenter
+                    topPadding: compact.inkTopPad(font.pixelSize)
+                    bottomPadding: compact.inkBottomPad(font.pixelSize)
                     text: compact.useIcons
                           ? root.nextTimeFormatted
                           : root.nextName + " " + root.nextTimeFormatted
                     font.family: compact.appFont
-                    font.pointSize: Kirigami.Theme.defaultFont.pointSize * compact.appScale
+                    font.pixelSize: compact.oneLinePx
                     font.weight: Font.DemiBold
                     color: root.appTextColor
                 }
                 PlasmaComponents3.Label {
+                    Layout.alignment: Qt.AlignVCenter
+                    Layout.preferredHeight: compact.oneLinePx
+                    verticalAlignment: Text.AlignVCenter
+                    topPadding: compact.inkTopPad(font.pixelSize)
+                    bottomPadding: compact.inkBottomPad(font.pixelSize)
                     visible: compact.showCountdown
                     text: "· " + root.countdown
                     font.family: compact.appFont
-                    font.pointSize: Kirigami.Theme.defaultFont.pointSize * compact.appScale
+                    font.pixelSize: compact.oneLinePx
                     color: root.appTextColor
                     opacity: 0.7
                 }
@@ -181,13 +270,18 @@ MouseArea {
     Component {
         id: fullHorizontalComp
         RowLayout {
-            spacing: Kirigami.Units.largeSpacing
+            spacing: Kirigami.Units.smallSpacing * 1.5
 
             PlasmaComponents3.Label {
+                Layout.alignment: Qt.AlignVCenter
+                Layout.preferredHeight: compact.basePx
+                verticalAlignment: Text.AlignVCenter
+                topPadding: compact.inkTopPad(font.pixelSize)
+                bottomPadding: compact.inkBottomPad(font.pixelSize)
                 visible: compact.showHijri
                 text: compact.hijriText
                 font.family: compact.appFont
-                font.pointSize: Kirigami.Theme.defaultFont.pointSize * compact.appScale
+                font.pixelSize: compact.basePx
                 font.weight: Font.DemiBold
                 color: root.appTextColor
             }
@@ -215,24 +309,33 @@ MouseArea {
                     // prayer's cell grows downwards by a countdown line, and
                     // an icon inside the column would ride up half a line and
                     // break alignment with the other prayers' icons
+                    readonly property real linePx: isNext ? compact.nextPx : compact.basePx
+
                     Kirigami.Icon {
                         visible: compact.useIcons
                         Layout.alignment: Qt.AlignVCenter
-                        Layout.preferredWidth: cellLabel.implicitHeight
-                        Layout.preferredHeight: cellLabel.implicitHeight
+                        Layout.preferredWidth: compact.panelIconSide
+                        Layout.preferredHeight: compact.panelIconSide
                         source: compact.prayerIcon(prayerCell.modelData)
                         isMask: true
                         color: prayerCell.isNext ? root.appAccentColor
                                                  : root.appTextColor
                     }
 
+                    // Each label is given exactly the box its font.pixelSize
+                    // is cut from, so the two stacked lines of the next
+                    // prayer add up to the panel thickness whatever the font
                     Column {
                         Layout.alignment: Qt.AlignVCenter
-                        spacing: -5  // hug the countdown against the prayer label
+                        spacing: 0
 
                         PlasmaComponents3.Label {
                             id: cellLabel
                             anchors.horizontalCenter: parent.horizontalCenter
+                            height: prayerCell.linePx
+                            verticalAlignment: Text.AlignVCenter
+                            topPadding: compact.inkTopPad(font.pixelSize)
+                            bottomPadding: compact.inkBottomPad(font.pixelSize)
                             text: (compact.useIcons
                                    ? "" : root.names[prayerCell.modelData] + " ")
                                   + Mawaqit.formatTime(root.todayTimes[prayerCell.modelData],
@@ -240,20 +343,23 @@ MouseArea {
                             font.family: compact.appFont
                             font.weight: (prayerCell.isNext && root.appBoldNext)
                                          ? Font.Bold : Font.Normal
-                            font.pointSize: Kirigami.Theme.defaultFont.pointSize
-                                            * (prayerCell.isNext ? 1.15 : 1) * compact.appScale
+                            font.pixelSize: prayerCell.linePx
                             color: prayerCell.isNext ? root.appAccentColor
                                                      : root.appTextColor
                         }
 
                         PlasmaComponents3.Label {
                             anchors.horizontalCenter: parent.horizontalCenter
+                            height: compact.lowerLinePx
+                            verticalAlignment: Text.AlignVCenter
+                            topPadding: compact.inkTopPad(font.pixelSize)
+                            bottomPadding: compact.inkBottomPad(font.pixelSize)
                             visible: prayerCell.isNext && compact.showCountdown
                                      && root.countdownHM !== ""
                             text: Mawaqit.inCountdown(root.countdownHM,
                                                       Plasmoid.configuration.labelLanguage)
                             font.family: compact.appFont
-                            font.pointSize: Kirigami.Theme.smallFont.pointSize * compact.appScale
+                            font.pixelSize: compact.lowerLinePx
                             color: root.appAccentColor
                             opacity: 0.85
                         }
