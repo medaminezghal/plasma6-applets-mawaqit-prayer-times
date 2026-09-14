@@ -20,7 +20,23 @@ Item {
     // The expanded view (desktop body and panel popup) always shows the full
     // table. displayMode only affects the inline panel strip.
     readonly property bool hasContent: root.configured && root.calendar !== null
-    readonly property int outerMargin: Kirigami.Units.largeSpacing * 2
+    // Every spacing below is multiplied by the font-size slider too, so a
+    // bigger font grows the whole layout uniformly instead of only the text
+    readonly property real sp: root.appFontScale
+    readonly property real outerMargin: Math.round(Kirigami.Units.smallSpacing * 2 * sp)
+
+    /* -------------------- font-driven metrics ------------------------ *
+     * Nothing here is a fixed grid multiple any more: the row height comes
+     * from the line height of the family and size the user picked, and the
+     * width from the widest row, so the font-size slider changes both
+     * dimensions and the widget is never larger than its text needs. */
+    FontMetrics {
+        id: bodyMetrics
+        font.family: root.appFontFamily
+        font.pointSize: Kirigami.Theme.defaultFont.pointSize * root.appFontScale
+    }
+    readonly property real rowHeight: Math.round(bodyMetrics.height
+                                                 + Kirigami.Units.smallSpacing * sp)
 
     /* ------------------- container frame metrics --------------------- *
      * Who draws the frame around this item depends on where it lives:
@@ -85,8 +101,91 @@ Item {
     readonly property real padTop: outerMargin + framePad * frameMetrics.fixedMargins.top
     readonly property real padBottom: outerMargin + framePad * frameMetrics.fixedMargins.bottom
 
-    Layout.minimumWidth: Kirigami.Units.gridUnit * 14
-    Layout.preferredWidth: Kirigami.Units.gridUnit * 16
+    /* ------------------- fit the desktop widget ---------------------- *
+     * The desktop containment only ever grows an applet:
+     * GridLayoutManager::adjustToItemSizeHints raises the size to the
+     * minimum and preferred hints and has the maximum branch commented out,
+     * so a widget placed larger once - or whose content later shrank - keeps
+     * the old size for good. This widget publishes a fixed size
+     * (maximum == minimum), so shrink the container down to it ourselves.
+     *
+     * Only public QML API of the containment layout is used:
+     * ItemContainer.layout with its paddings and cell sizes, and the
+     * invokable releaseSpace()/positionItem(). Every lookup is duck-typed
+     * and guarded, so on a containment that works differently this quietly
+     * does nothing. */
+    function appletContainer() {
+        var item = full.parent;
+        while (item) {
+            if (item.layout !== undefined && item.layout !== null
+                    && typeof item.layout.releaseSpace === "function"
+                    && typeof item.layout.positionItem === "function"
+                    && item.topPadding !== undefined) {
+                return item;
+            }
+            item = item.parent;
+        }
+        return null;
+    }
+
+    function fitToContent() {
+        if (!full.onDesktop || !full.hasContent) {
+            return;
+        }
+        var container = appletContainer();
+        if (!container || container.editMode) {
+            return;
+        }
+        var appletsLayout = container.layout;
+        if (appletsLayout.editMode) {
+            return;
+        }
+
+        // Round up to whole cells, exactly as adjustToItemSizeHints would,
+        // so it has nothing left to correct afterwards
+        var cellW = appletsLayout.cellWidth > 0 ? appletsLayout.cellWidth : 1;
+        var cellH = appletsLayout.cellHeight > 0 ? appletsLayout.cellHeight : 1;
+        var wantWidth = cellW * Math.ceil((full.Layout.preferredWidth
+                                           + container.leftPadding
+                                           + container.rightPadding) / cellW);
+        var wantHeight = cellH * Math.ceil((full.Layout.preferredHeight
+                                            + container.topPadding
+                                            + container.bottomPadding) / cellH);
+        wantWidth = Math.max(appletsLayout.minimumItemWidth, wantWidth);
+        wantHeight = Math.max(appletsLayout.minimumItemHeight, wantHeight);
+
+        if (container.width <= wantWidth + 1 && container.height <= wantHeight + 1) {
+            return;
+        }
+
+        // Free the cells, resize, then let the layout re-take them; the
+        // re-take is what flags the geometry as needing saving.
+        appletsLayout.releaseSpace(container);
+        container.width = wantWidth;
+        container.height = wantHeight;
+        appletsLayout.positionItem(container);
+    }
+
+    Timer {
+        id: fitTimer
+        interval: 250
+        onTriggered: full.fitToContent()
+    }
+
+    Connections {
+        target: contentColumn
+        function onImplicitWidthChanged() { fitTimer.restart(); }
+        function onImplicitHeightChanged() { fitTimer.restart(); }
+    }
+
+    // Width: the widest row wins, with a 14-gridUnit floor (the original
+    // minimum) so the table does not turn into a narrow strip at small sizes
+    Layout.minimumWidth: hasContent
+                         ? Math.max(Kirigami.Units.gridUnit * 14 * sp,
+                                    Math.ceil(contentColumn.implicitWidth) + padLeft + padRight)
+                         : Kirigami.Units.gridUnit * 14
+    Layout.preferredWidth: Layout.minimumWidth
+    Layout.maximumWidth: Layout.minimumWidth
     Layout.minimumHeight: hasContent
                           ? contentColumn.implicitHeight + padTop + padBottom
                           : Kirigami.Units.gridUnit * 10
@@ -158,8 +257,16 @@ Item {
         }
     }
 
-    Component.onCompleted: updatePopupFrame()
-    onVisibleChanged: updatePopupFrame()
+    Component.onCompleted: {
+        updatePopupFrame();
+        fitTimer.restart();
+    }
+    onVisibleChanged: {
+        updatePopupFrame();
+        if (visible) {
+            fitTimer.restart();
+        }
+    }
 
     Connections {
         target: Plasmoid.configuration
@@ -217,10 +324,13 @@ Item {
             rightMargin: full.padRight
         }
         visible: full.hasContent
-        spacing: Kirigami.Units.smallSpacing
+        spacing: Kirigami.Units.smallSpacing * full.sp
 
         PlasmaExtras.Heading {
             Layout.fillWidth: true
+            // A floor, not a demand: a long mosque name elides instead of
+            // stretching the widget to fit
+            Layout.preferredWidth: Kirigami.Units.gridUnit * 8 * full.sp
             level: 3
             text: root.mosqueName
             elide: Text.ElideRight
@@ -243,8 +353,8 @@ Item {
 
         Kirigami.Separator {
             Layout.fillWidth: true
-            Layout.topMargin: Kirigami.Units.smallSpacing
-            Layout.bottomMargin: Kirigami.Units.smallSpacing
+            Layout.topMargin: Kirigami.Units.smallSpacing * full.sp
+            Layout.bottomMargin: Kirigami.Units.smallSpacing * full.sp
         }
 
         /* ---------- Full times table ---------- */
@@ -266,16 +376,20 @@ Item {
 
                     visible: !isSunrise || Plasmoid.configuration.showSunrise
                     Layout.fillWidth: true
-                    Layout.preferredHeight: Kirigami.Units.gridUnit * 1.7
+                    Layout.preferredHeight: full.rowHeight
+                    // Sets the widget width: name + gap + time, never elided
+                    implicitWidth: rowContent.implicitWidth
+                                   + Kirigami.Units.smallSpacing * 4 * full.sp
                     radius: Kirigami.Units.cornerRadius
                     color: isNext
                            ? Qt.alpha(root.appAccentColor, 0.25)
                            : "transparent"
 
                     RowLayout {
+                        id: rowContent
                         anchors.fill: parent
-                        anchors.leftMargin: Kirigami.Units.largeSpacing
-                        anchors.rightMargin: Kirigami.Units.largeSpacing
+                        anchors.leftMargin: Kirigami.Units.smallSpacing * 2 * full.sp
+                        anchors.rightMargin: Kirigami.Units.smallSpacing * 2 * full.sp
 
                         PlasmaComponents3.Label {
                             text: root.names[prayerRow.index]
@@ -286,7 +400,11 @@ Item {
                             opacity: prayerRow.isSunrise ? 0.65 : 1
                         }
 
-                        Item { Layout.fillWidth: true }
+                        Item {
+                            Layout.fillWidth: true
+                            // Smallest gap allowed between name and time
+                            Layout.preferredWidth: Kirigami.Units.gridUnit * full.sp
+                        }
 
                         PlasmaComponents3.Label {
                             text: root.todayTimes
@@ -304,12 +422,12 @@ Item {
 
             Kirigami.Separator {
                 Layout.fillWidth: true
-                Layout.topMargin: Kirigami.Units.smallSpacing
+                Layout.topMargin: Kirigami.Units.smallSpacing * full.sp
             }
 
             PlasmaComponents3.Label {
                 Layout.fillWidth: true
-                Layout.topMargin: Kirigami.Units.smallSpacing
+                Layout.topMargin: Kirigami.Units.smallSpacing * full.sp
                 horizontalAlignment: Text.AlignHCenter
                 visible: root.next !== null
                 text: root.next && root.next.tomorrow
