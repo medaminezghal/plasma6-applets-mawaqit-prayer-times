@@ -1,0 +1,17 @@
+<!-- Bold variant of fajr.svg: same geometry, thicker strokes. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 22 22">
+  <defs>
+    <style type="text/css" id="current-color-scheme">
+      .ColorScheme-Text { color:#232629; }
+    </style>
+  </defs>
+  <g class="ColorScheme-Text" transform="translate(-1.119 -2.947) scale(0.6059)">
+    <g fill="none" stroke="currentColor" stroke-width="3.195"
+       stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 29 H36"/>
+      <path d="M20 23 V17"/>
+      <path d="M10 25 L6.5 21.5"/>
+      <path d="M30 25 L33.5 21.5"/>
+    </g>
+  </g>
+</svg>
