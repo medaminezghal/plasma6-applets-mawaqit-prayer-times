@@ -4,9 +4,18 @@ import QtQuick.Layouts
 import org.kde.kirigami as Kirigami
 import org.kde.kcmutils as KCM
 import org.kde.kquickcontrols as KQControls
+import org.kde.plasma.plasmoid
+import org.kde.plasma.core as PlasmaCore
 
 KCM.SimpleKCM {
     id: page
+
+    // In a panel the expanded view is a popup window whose shape is the
+    // theme's, so it keeps the theme's own corner radius and the setting has
+    // nothing to act on; there the custom background only changes colour and
+    // opacity.
+    readonly property bool inPanel: Plasmoid.formFactor === PlasmaCore.Types.Horizontal
+                                    || Plasmoid.formFactor === PlasmaCore.Types.Vertical
 
     /* ------------------- bound configuration keys ------------------- */
     // fontFamily is set by the native font dialog below (family only); "" =
@@ -25,7 +34,7 @@ KCM.SimpleKCM {
     // Int config keys are driven explicitly (value + onMoved) so the slider's
     // real value never gets coerced into the alias with a type warning.
     property int cfg_backgroundOpacity
-    property alias cfg_backgroundRadius: bgRadiusSpin.value
+    property int cfg_backgroundRadius
 
     /* ----------------------- font picker sheet ---------------------- *
      * A fonts-only chooser. The native font dialog always shows style/size/
@@ -244,13 +253,26 @@ KCM.SimpleKCM {
             }
         }
 
-        QQC2.SpinBox {
-            id: bgRadiusSpin
+        RowLayout {
             Kirigami.FormData.label: i18n("Corner radius:")
             enabled: customBgCheck.checked
-            from: 0
-            to: 40
-            textFromValue: function (value) { return i18np("%1 px", "%1 px", value); }
+            visible: !page.inPanel
+            Layout.fillWidth: true
+
+            QQC2.Slider {
+                id: bgRadiusSlider
+                Layout.fillWidth: true
+                Layout.preferredWidth: Kirigami.Units.gridUnit * 12
+                from: 0
+                to: 40
+                stepSize: 1
+                value: page.cfg_backgroundRadius
+                onMoved: page.cfg_backgroundRadius = value
+            }
+            QQC2.Label {
+                text: i18np("%1 px", "%1 px", Math.round(bgRadiusSlider.value))
+                Layout.minimumWidth: Kirigami.Units.gridUnit * 3
+            }
         }
 
         QQC2.Label {

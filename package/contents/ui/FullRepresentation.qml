@@ -60,6 +60,24 @@ Item {
         }
     }
 
+    /* The popup keeps the theme's own shape: the corner tile of
+     * "dialogs/background" is what rounds a Plasma dialog, and SvgItem
+     * reports its size as a bindable property, so the custom background can
+     * use exactly that radius instead of a guessed number. In a panel the
+     * corner-radius setting is hidden for the same reason - there the custom
+     * background only changes colour and opacity. */
+    KSvg.SvgItem {
+        id: dialogCorner
+        visible: false
+        width: 0
+        height: 0
+        imagePath: "dialogs/background"
+        elementId: "topleft"
+    }
+    readonly property real popupRadius: dialogCorner.naturalSize.width > 0
+                                        ? dialogCorner.naturalSize.width
+                                        : Kirigami.Units.cornerRadius
+
     // Padding the applet container stops adding once we turn its frame off
     readonly property real framePad: (root.appCustomBackground && onDesktop) ? 1 : 0
     readonly property real padLeft: outerMargin + framePad * frameMetrics.fixedMargins.left
@@ -84,7 +102,7 @@ Item {
         anchors.fill: parent
         visible: root.appCustomBackground
         color: root.appBackgroundColor
-        radius: root.appBackgroundRadius
+        radius: full.inPopup ? full.popupRadius : root.appBackgroundRadius
         anchors.leftMargin: full.inPopup ? frameMetrics.bleed("left")
                                          : frameMetrics.shadow("left")
         anchors.rightMargin: full.inPopup ? frameMetrics.bleed("right")
