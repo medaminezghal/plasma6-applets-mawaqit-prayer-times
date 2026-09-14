@@ -1,0 +1,24 @@
+<!-- Bold variant of asr.svg: same geometry, thicker strokes. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 22 22">
+  <defs>
+    <style type="text/css" id="current-color-scheme">
+      .ColorScheme-Text { color:#232629; }
+    </style>
+  </defs>
+  <g class="ColorScheme-Text" transform="translate(-4.016 -2.034) scale(0.6679)">
+    <g fill="none" stroke="currentColor" stroke-width="2.899"
+       stroke-linecap="round" stroke-linejoin="round">
+      <path d="M9 5 V34"/>
+      <path d="M9 34 H36"/>
+      <circle cx="24" cy="17" r="6.5"/>
+      <path d="M24 8 V5"/>
+      <path d="M24 26 V29"/>
+      <path d="M15.5 17 H12.8"/>
+      <path d="M32.5 17 H35.2"/>
+      <path d="M30 11 L32.2 8.8"/>
+      <path d="M18 11 L15.8 8.8"/>
+      <path d="M30 23 L32.2 25.2"/>
+      <path d="M18 23 L15.8 25.2"/>
+    </g>
+  </g>
+</svg>

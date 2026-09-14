@@ -26,10 +26,14 @@ MouseArea {
     readonly property var prayerIcons: ["fajr", "shuruq", "dhuhr",
                                         "asr", "maghrib", "isha"]
     readonly property string nextIcon: root.next !== null
-        ? prayerIcon(root.next.index)
+        ? prayerIcon(root.next.index, root.appBoldNext)
         : Qt.resolvedUrl("../icons/mosque.svg")
-    function prayerIcon(index) {
-        return Qt.resolvedUrl("../icons/" + prayerIcons[index] + ".svg");
+    // A glyph has no font weight, so "bold" is a second copy of each SVG with
+    // thicker strokes. The geometry is identical, so the icon does not shift
+    // when it becomes the next prayer.
+    function prayerIcon(index, bold) {
+        return Qt.resolvedUrl("../icons/" + prayerIcons[index]
+                              + (bold ? "-bold" : "") + ".svg");
     }
 
     // Horizontal strip: glyphs in place of prayer names, and the hijri date
@@ -167,6 +171,8 @@ MouseArea {
                 font.family: compact.appFont
                 font.pixelSize: compact.verticalLinePx
                 font.weight: Font.DemiBold
+                style: root.fontLacksBold ? Text.Raised : Text.Normal
+                styleColor: color
                 color: root.appTextColor
             }
         }
@@ -210,6 +216,8 @@ MouseArea {
                 font.family: compact.appFont
                 font.pixelSize: compact.oneLinePx
                 font.weight: Font.DemiBold
+                style: root.fontLacksBold ? Text.Raised : Text.Normal
+                styleColor: color
                 color: root.appTextColor
             }
 
@@ -228,7 +236,9 @@ MouseArea {
                     Layout.alignment: Qt.AlignVCenter
                     Layout.preferredWidth: compact.panelIconSide
                     Layout.preferredHeight: compact.panelIconSide
-                    source: root.next !== null ? compact.prayerIcon(root.next.index) : ""
+                    source: root.next !== null
+                            ? compact.prayerIcon(root.next.index, root.appBoldNext)
+                            : ""
                     isMask: true
                     color: root.appTextColor
                 }
@@ -245,6 +255,8 @@ MouseArea {
                     font.family: compact.appFont
                     font.pixelSize: compact.oneLinePx
                     font.weight: Font.DemiBold
+                    style: root.fontLacksBold ? Text.Raised : Text.Normal
+                    styleColor: color
                     color: root.appTextColor
                 }
                 PlasmaComponents3.Label {
@@ -283,6 +295,8 @@ MouseArea {
                 font.family: compact.appFont
                 font.pixelSize: compact.basePx
                 font.weight: Font.DemiBold
+                style: root.fontLacksBold ? Text.Raised : Text.Normal
+                styleColor: color
                 color: root.appTextColor
             }
 
@@ -316,7 +330,8 @@ MouseArea {
                         Layout.alignment: Qt.AlignVCenter
                         Layout.preferredWidth: compact.panelIconSide
                         Layout.preferredHeight: compact.panelIconSide
-                        source: compact.prayerIcon(prayerCell.modelData)
+                        source: compact.prayerIcon(prayerCell.modelData,
+                                                   prayerCell.isNext && root.appBoldNext)
                         isMask: true
                         color: prayerCell.isNext ? root.appAccentColor
                                                  : root.appTextColor
@@ -343,6 +358,9 @@ MouseArea {
                             font.family: compact.appFont
                             font.weight: (prayerCell.isNext && root.appBoldNext)
                                          ? Font.Bold : Font.Normal
+                            style: (prayerCell.isNext && root.appFakeBold)
+                                   ? Text.Raised : Text.Normal
+                            styleColor: color
                             font.pixelSize: prayerCell.linePx
                             color: prayerCell.isNext ? root.appAccentColor
                                                      : root.appTextColor

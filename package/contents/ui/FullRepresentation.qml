@@ -347,6 +347,8 @@ Item {
             font.family: root.appFontFamily
             font.pointSize: Kirigami.Theme.defaultFont.pointSize * root.appFontScale
             font.weight: Font.DemiBold
+            style: root.fontLacksBold ? Text.Raised : Text.Normal
+            styleColor: color
             color: root.appTextColor
             opacity: 0.85
         }
@@ -396,6 +398,8 @@ Item {
                             font.family: root.appFontFamily
                             font.pointSize: Kirigami.Theme.defaultFont.pointSize * root.appFontScale
                             font.weight: (prayerRow.isNext && root.appBoldNext) ? Font.Bold : Font.Normal
+                            style: (prayerRow.isNext && root.appFakeBold) ? Text.Raised : Text.Normal
+                            styleColor: color
                             color: root.appTextColor
                             opacity: prayerRow.isSunrise ? 0.65 : 1
                         }
@@ -413,6 +417,8 @@ Item {
                             font.family: root.appFontFamily
                             font.pointSize: Kirigami.Theme.defaultFont.pointSize * root.appFontScale
                             font.weight: (prayerRow.isNext && root.appBoldNext) ? Font.Bold : Font.Normal
+                            style: (prayerRow.isNext && root.appFakeBold) ? Text.Raised : Text.Normal
+                            styleColor: color
                             color: root.appTextColor
                             opacity: prayerRow.isSunrise ? 0.65 : 1
                         }
