@@ -265,6 +265,11 @@ PlasmoidItem {
         function onMosqueSlugChanged() {
             root.errorMessage = "";
             root.next = null;
+            // mosqueName prefers fetchedName over everything else, so leaving
+            // it set made a failed switch keep showing the previous mosque's
+            // name in the header and tooltip next to "Couldn't load prayer
+            // times" - as if the right mosque were selected.
+            root.fetchedName = "";
             Plasmoid.configuration.cachedCalendar = "";
             Plasmoid.configuration.cachedYear = 0;
             Plasmoid.configuration.lastFetch = "";
