@@ -171,8 +171,6 @@ MouseArea {
                 font.family: compact.appFont
                 font.pixelSize: compact.verticalLinePx
                 font.weight: Font.DemiBold
-                style: root.fontLacksBold ? Text.Raised : Text.Normal
-                styleColor: color
                 color: root.appTextColor
             }
         }
@@ -216,8 +214,6 @@ MouseArea {
                 font.family: compact.appFont
                 font.pixelSize: compact.oneLinePx
                 font.weight: Font.DemiBold
-                style: root.fontLacksBold ? Text.Raised : Text.Normal
-                styleColor: color
                 color: root.appTextColor
             }
 
@@ -255,8 +251,6 @@ MouseArea {
                     font.family: compact.appFont
                     font.pixelSize: compact.oneLinePx
                     font.weight: Font.DemiBold
-                    style: root.fontLacksBold ? Text.Raised : Text.Normal
-                    styleColor: color
                     color: root.appTextColor
                 }
                 PlasmaComponents3.Label {
@@ -295,8 +289,6 @@ MouseArea {
                 font.family: compact.appFont
                 font.pixelSize: compact.basePx
                 font.weight: Font.DemiBold
-                style: root.fontLacksBold ? Text.Raised : Text.Normal
-                styleColor: color
                 color: root.appTextColor
             }
 
@@ -358,9 +350,6 @@ MouseArea {
                             font.family: compact.appFont
                             font.weight: (prayerCell.isNext && root.appBoldNext)
                                          ? Font.Bold : Font.Normal
-                            style: (prayerCell.isNext && root.appFakeBold)
-                                   ? Text.Raised : Text.Normal
-                            styleColor: color
                             font.pixelSize: prayerCell.linePx
                             color: prayerCell.isNext ? root.appAccentColor
                                                      : root.appTextColor
