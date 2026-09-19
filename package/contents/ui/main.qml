@@ -197,6 +197,12 @@ PlasmoidItem {
         var now = new Date();
         if (force || now.getDate() !== lastComputedDay) {
             lastComputedDay = now.getDate();
+            // The cached "next" belongs to the day that just ended. After
+            // Isha it carries tomorrow: true, and at midnight that tomorrow
+            // has become today - but tick() only recomputes when
+            // now >= next.date, which is still hours away, so the stale
+            // object would survive until Fajr and keep saying "tomorrow".
+            next = null;
             todayTimes = Mawaqit.timesForDate(calendar, now);
             hijriDateText = Mawaqit.formatHijri(
                 now,
