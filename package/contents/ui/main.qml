@@ -78,6 +78,14 @@ PlasmoidItem {
     property string hijriDateNumeric: ""
     property bool fetching: false
     property string errorMessage: ""
+    // Outstanding request plus a token identifying it. QML's XMLHttpRequest
+    // has no timeout (QTBUG-38096), so a connection that is accepted and then
+    // stalls - captive portal, half-open socket after a resume - would leave
+    // "fetching" true for good, disabling Refresh and short-circuiting every
+    // later refetch() at its guard. The watchdog below aborts it; the token
+    // makes the late callback a no-op.
+    property var pendingRequest: null
+    property int fetchToken: 0
     property int lastComputedDay: -1
 
     readonly property var names: Mawaqit.prayerNames(Plasmoid.configuration.labelLanguage)
@@ -130,7 +138,14 @@ PlasmoidItem {
         }
         fetching = true;
         var slug = mosqueSlug;
-        Mawaqit.fetchConf(slug, function (conf) {
+        var token = ++fetchToken;
+        fetchWatchdog.restart();
+        pendingRequest = Mawaqit.fetchConf(slug, function (conf) {
+            if (token !== root.fetchToken) {
+                return; // superseded or timed out
+            }
+            fetchWatchdog.stop();
+            pendingRequest = null;
             fetching = false;
             if (slug !== root.mosqueSlug) {
                 return; // config changed mid-flight
@@ -152,9 +167,28 @@ PlasmoidItem {
             }
             recomputeDay(true);
         }, function (err) {
+            if (token !== root.fetchToken) {
+                return; // superseded or timed out
+            }
+            fetchWatchdog.stop();
+            pendingRequest = null;
             fetching = false;
             errorMessage = err; // keep serving the cache on transient errors
         });
+    }
+
+    Timer {
+        id: fetchWatchdog
+        interval: 30000
+        onTriggered: {
+            root.fetchToken++; // any late callback is now ignored
+            if (root.pendingRequest !== null) {
+                root.pendingRequest.abort();
+                root.pendingRequest = null;
+            }
+            root.fetching = false;
+            root.errorMessage = i18n("mawaqit.net did not respond in time");
+        }
     }
 
     /* ---------------------- per-day / per-second ------------------------ */

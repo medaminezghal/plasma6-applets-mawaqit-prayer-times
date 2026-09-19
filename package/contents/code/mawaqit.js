@@ -82,11 +82,19 @@ function fetchConf(slug, onSuccess, onError) {
             }
         } else if (xhr.status === 404) {
             onError("Mosque \u201C" + slug + "\u201D not found on mawaqit.net");
+        } else if (xhr.status === 0) {
+            // No HTTP status: the connection failed, or abort() was called
+            // (QQmlXMLHttpRequest::abort dispatches the callback with the
+            // state set to Done).
+            onError("Could not reach mawaqit.net");
         } else {
             onError("HTTP " + xhr.status + " from mawaqit.net");
         }
     };
     xhr.send();
+    // Returned so the caller can abort it: QML's XMLHttpRequest has no
+    // timeout property, so the watchdog has to live on the caller's side.
+    return xhr;
 }
 
 /* --------------------------- mosque search ---------------------------- *
