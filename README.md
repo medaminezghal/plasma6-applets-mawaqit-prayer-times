@@ -53,10 +53,17 @@ mosque's own screens rather than a calendar that quietly disagrees with it.
 No account, no API key, no third-party server. Each installation talks
 directly to mawaqit.net roughly once a week.
 
-> **Note:** Mawaqit's proximity-search API requires an account, so the
-> "nearby mosques" feature uses Mawaqit's public keyword search seeded with
-> your detected city instead. You can always paste your mosque's URL slug
-> manually.
+> **Note:** "Detect my location" asks Mawaqit's public search for the
+> mosques closest to the detected coordinates, and falls back to searching
+> the detected city by name. Mawaqit returns results ten at a time, so use
+> **Show more mosques** if yours isn't in the first list. You can always
+> paste your mosque's mawaqit.net address instead.
+
+Prayer times are shown in the mosque's own time zone, as published. If your
+computer runs in a different time zone, the next prayer and the countdown
+are still computed correctly, and the popup notes which zone the times are
+in (this uses Plasma's time data engine; without it no correction is
+applied).
 
 ### About location detection
 

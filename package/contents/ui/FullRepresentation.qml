@@ -447,6 +447,21 @@ Item {
                 font.pointSize: Kirigami.Theme.smallFont.pointSize * root.appFontScale
                 color: root.appTextColor
             }
+
+            // The calendar is in the mosque's wall-clock time; say so when
+            // that isn't the computer's, since the times then won't match
+            // the panel clock
+            PlasmaComponents3.Label {
+                Layout.fillWidth: true
+                horizontalAlignment: Text.AlignHCenter
+                wrapMode: Text.WordWrap
+                visible: root.tzShift !== 0
+                text: i18n("Times are in the mosque's time zone (%1)", root.mosqueTimeZone)
+                opacity: 0.6
+                font.family: root.appFontFamily
+                font.pointSize: Kirigami.Theme.smallFont.pointSize * root.appFontScale
+                color: root.appTextColor
+            }
         }
     }
 }
