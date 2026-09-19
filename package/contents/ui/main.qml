@@ -31,29 +31,6 @@ PlasmoidItem {
     readonly property real appFontScale: Plasmoid.configuration.fontScale
     readonly property bool appBoldNext: Plasmoid.configuration.boldNextPrayer
 
-    // Some families ship no bold face and the system does not always
-    // synthesise one, so "bold" silently renders as regular. Detect that by
-    // measuring: if the bold run is exactly as wide as the regular one the
-    // request was ignored, and the labels fall back to Text.Raised in their
-    // own colour: a second copy one pixel offset, the classic double-strike
-    // fake bold, which reads as bold without the blur of an outline.
-    TextMetrics {
-        id: boldProbeRegular
-        font.family: root.appFontFamily
-        font.pixelSize: 100
-        font.weight: Font.Normal
-        text: "0123456789 ABCDEF"
-    }
-    TextMetrics {
-        id: boldProbeBold
-        font.family: root.appFontFamily
-        font.pixelSize: 100
-        font.weight: Font.Bold
-        text: boldProbeRegular.text
-    }
-    readonly property bool fontLacksBold:
-        Math.abs(boldProbeBold.advanceWidth - boldProbeRegular.advanceWidth) < 0.5
-    readonly property bool appFakeBold: appBoldNext && fontLacksBold
     readonly property color appTextColor: Plasmoid.configuration.customTextColor
                                           ? Plasmoid.configuration.textColor
                                           : Kirigami.Theme.textColor
