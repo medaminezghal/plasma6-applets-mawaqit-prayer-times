@@ -161,6 +161,16 @@ function coordsQuery(lat, lon) {
 
 /* ------------------------------ location ------------------------------ */
 
+/* QML's XMLHttpRequest sends "User-Agent: Mozilla/5.0" unless told
+ * otherwise. Nominatim's usage policy requires an agent that identifies
+ * the application and answers 403 to that one, and ipapi.co answers a
+ * browser-like agent with a Cloudflare challenge (403) - so reverse
+ * geocoding never worked and the second IP provider rarely did. Every
+ * location service accepts this one; mawaqit.net requests are left as
+ * they were. */
+var APP_USER_AGENT = "plasma6-applets-mawaqit-prayer-times "
+                   + "(+https://github.com/medaminezghal/plasma6-applets-mawaqit-prayer-times)";
+
 var IP_PROVIDERS = [
     {
         url: "https://ipwho.is/",
@@ -194,6 +204,7 @@ function ipLocate(onSuccess, onError, _index) {
     var xhr = new XMLHttpRequest();
     xhr.open("GET", provider.url);
     xhr.setRequestHeader("Accept", "application/json");
+    xhr.setRequestHeader("User-Agent", APP_USER_AGENT);
     xhr.onreadystatechange = function () {
         if (xhr.readyState !== XMLHttpRequest.DONE) return;
         var next = function () { ipLocate(onSuccess, onError, index + 1); };
@@ -219,6 +230,7 @@ function reverseGeocode(lat, lon, onSuccess, onError) {
     xhr.open("GET", "https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=10&lat="
              + lat + "&lon=" + lon);
     xhr.setRequestHeader("Accept", "application/json");
+    xhr.setRequestHeader("User-Agent", APP_USER_AGENT);
     xhr.onreadystatechange = function () {
         if (xhr.readyState !== XMLHttpRequest.DONE) return;
         if (xhr.status !== 200) {

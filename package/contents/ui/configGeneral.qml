@@ -58,6 +58,20 @@ KCM.SimpleKCM {
         cfg_cachedHijriForce30 = switching ? false : live.cachedHijriForce30;
     }
 
+    // Keep the cache keys in step with the widget while the dialog is open.
+    // Plasma enables Apply (and asks about unsaved changes on close) when
+    // any declared cfg_ key differs from the live config, so a fetch while
+    // the dialog was open - e.g. right after picking a mosque and pressing
+    // Apply - made an untouched dialog look modified.
+    Connections {
+        target: Plasmoid.configuration
+        function onCachedCalendarChanged() { page.cfg_cachedCalendar = Plasmoid.configuration.cachedCalendar; }
+        function onCachedYearChanged() { page.cfg_cachedYear = Plasmoid.configuration.cachedYear; }
+        function onLastFetchChanged() { page.cfg_lastFetch = Plasmoid.configuration.lastFetch; }
+        function onCachedHijriAdjustmentChanged() { page.cfg_cachedHijriAdjustment = Plasmoid.configuration.cachedHijriAdjustment; }
+        function onCachedHijriForce30Changed() { page.cfg_cachedHijriForce30 = Plasmoid.configuration.cachedHijriForce30; }
+    }
+
     /* --------------------------- state ------------------------------ */
     property bool locating: false
     property bool searching: false
@@ -266,6 +280,9 @@ KCM.SimpleKCM {
                 return;
             }
             loadingMore = false;
+            // Replacing the model resets the list to the top, so remember
+            // where the new mosques start and scroll there once they are in
+            var firstNew = searchResults.length;
             var seen = {};
             var merged = searchResults.slice();
             for (var i = 0; i < merged.length; i++) {
@@ -278,6 +295,11 @@ KCM.SimpleKCM {
                 }
             }
             searchResults = merged;
+            if (merged.length > firstNew) {
+                Qt.callLater(function () {
+                    resultsList.positionViewAtIndex(firstNew, ListView.Beginning);
+                });
+            }
             searchPageLoaded = nextPage;
             searchHasMore = results.length >= Mawaqit.SEARCH_PAGE_SIZE;
             setStatus(countStatus(merged.length), false);
