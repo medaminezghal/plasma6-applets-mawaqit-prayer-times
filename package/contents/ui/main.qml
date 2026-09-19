@@ -86,7 +86,14 @@ PlasmoidItem {
     // makes the late callback a no-op.
     property var pendingRequest: null
     property int fetchToken: 0
+    // Year/month/day packed into one int. Comparing getDate() alone missed a
+    // rollover onto the same day number - suspend on 14 Sept, resume on
+    // 14 Oct and the widget kept September's row and hijri date until the
+    // next midnight.
     property int lastComputedDay: -1
+    function dayKey(d) {
+        return d.getFullYear() * 10000 + d.getMonth() * 100 + d.getDate();
+    }
 
     readonly property var names: Mawaqit.prayerNames(Plasmoid.configuration.labelLanguage)
     readonly property bool rtl: Mawaqit.isArabic(Plasmoid.configuration.labelLanguage)
@@ -195,8 +202,8 @@ PlasmoidItem {
 
     function recomputeDay(force) {
         var now = new Date();
-        if (force || now.getDate() !== lastComputedDay) {
-            lastComputedDay = now.getDate();
+        if (force || dayKey(now) !== lastComputedDay) {
+            lastComputedDay = dayKey(now);
             // The cached "next" belongs to the day that just ended. After
             // Isha it carries tomorrow: true, and at midnight that tomorrow
             // has become today - but tick() only recomputes when
@@ -223,7 +230,7 @@ PlasmoidItem {
 
     function tick() {
         var now = new Date();
-        if (now.getDate() !== lastComputedDay) {
+        if (dayKey(now) !== lastComputedDay) {
             recomputeDay(false);
             return;
         }
