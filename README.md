@@ -24,9 +24,9 @@ exact timetable your mosque publishes on [mawaqit.net](https://mawaqit.net)
   override the text and next-prayer accent colors, and give the widget a
   custom background with adjustable color, opacity, and corner radius — every
   option is opt-in and falls back to your Plasma theme
-- **Mosque finder in settings**: detect your location automatically
-  (GeoClue/Qt Positioning, with IP-based fallback), search Mawaqit for
-  mosques in your city, and pick yours from the list
+- **Mosque finder in settings**: search Mawaqit for mosques in your city
+  and pick yours from the list, or let the widget guess your city (see
+  [About location detection](#about-location-detection))
 - **Offline-first**: the entire year's calendar is cached locally after a
   single download — the widget keeps working with no network, and
   re-downloads only every few days to pick up schedule corrections
@@ -55,6 +55,31 @@ directly to mawaqit.net roughly once a week.
 > "nearby mosques" feature uses Mawaqit's public keyword search seeded with
 > your detected city instead. You can always paste your mosque's URL slug
 > manually.
+
+### About location detection
+
+On KDE Plasma, **"Detect my location" almost always works from your IP
+address**. That gives the location of your internet provider, not your own:
+it is usually right about the country, but it often points to a major city
+(such as the capital) instead of yours. This is the same on DSL, fibre,
+mobile data and phone hotspots — a hotspot is just another internet
+provider. The settings tell you when the detected city is only approximate.
+
+**The reliable way to find your mosque is to type your city name in the
+search box, or paste your mosque's mawaqit.net address.**
+
+Precise detection needs both of these:
+
+1. **GeoClue must accept the widget.** With GeoClue's default configuration,
+   apps need a location agent to approve them, and Plasma doesn't provide
+   one of the agents GeoClue accepts, so the request is refused and the
+   widget falls back to the IP lookup. (You can see this with
+   `journalctl -u geoclue -f` while clicking "Detect my location".)
+2. **Your computer needs a real location source**: a WiFi adapter within
+   range of access points known to [BeaconDB](https://beacondb.net)
+   (GeoClue's default server), a GPS, or a mobile-broadband modem. A wired
+   desktop only gets GeoClue's own IP-based estimate, which is no better
+   than the widget's.
 
 ## Installation
 
@@ -91,18 +116,24 @@ kpackagetool6 --type Plasma/Applet --upgrade package
 
 ### Optional dependency
 
-For GPS-accurate location detection install Qt Positioning
-(`qt6-positioning` on Arch) and a running GeoClue service. Without it, the
-widget falls back to IP-based city detection, which is good enough for
-finding your city's mosques.
+Qt Positioning (`qt6-positioning` on Arch) with a running GeoClue service
+lets the widget use a precise location when one is available (see
+[About location detection](#about-location-detection) for when that is).
+Without it, the widget uses IP-based detection, which only gives an
+approximate city.
 
 ## Privacy
 
 - Location detection runs **only** when you click "Detect my location" in
   the settings, and the result is used once to pre-fill the search box.
-  Nothing is stored or transmitted beyond that single lookup
-  (ipapi.co for IP lookup, nominatim.openstreetmap.org for reverse
-  geocoding).
+  Nothing is stored or transmitted beyond that single lookup. The services
+  involved are:
+  - IP lookup: `ipwho.is`, then `ipapi.co`, then `ip-api.com` (each is tried
+    only if the previous one fails; `ip-api.com` is queried over plain HTTP,
+    as its free tier has no HTTPS)
+  - GeoClue, if installed, may query [BeaconDB](https://beacondb.net) with
+    nearby WiFi networks
+  - Reverse geocoding: `nominatim.openstreetmap.org`
 - At runtime the widget contacts only `mawaqit.net`.
 
 ## License
