@@ -32,7 +32,6 @@ KCM.SimpleKCM {
     property string cfg_lastFetch
     property int cfg_cachedHijriAdjustment
     property bool cfg_cachedHijriForce30
-    property string cfg_cachedTimezone
 
     // Called by Plasma's config dialog before it writes the cfg_ keys back.
     // Keys are written in main.xml order, mosqueSlug first: switching
@@ -57,7 +56,6 @@ KCM.SimpleKCM {
         cfg_lastFetch = switching ? "" : live.lastFetch;
         cfg_cachedHijriAdjustment = switching ? 0 : live.cachedHijriAdjustment;
         cfg_cachedHijriForce30 = switching ? false : live.cachedHijriForce30;
-        cfg_cachedTimezone = switching ? "" : live.cachedTimezone;
     }
 
     /* --------------------------- state ------------------------------ */
@@ -74,6 +72,13 @@ KCM.SimpleKCM {
     property bool searchHasMore: false
     property bool loadingMore: false
     property int searchToken: 0
+    // What the current list is, so its status line can be rebuilt with the
+    // new count after "Show more mosques": a "word" or "nearby" search, and
+    // whether it rests on an approximate (internet provider) location -
+    // for a word search, the approximate city that was searched
+    property string resultsKind: ""
+    property bool resultsApproximate: false
+    property string resultsApproxCity: ""
     // Same idea for location detection, whose steps (GeoClue, IP lookup,
     // reverse geocoding) are all asynchronous
     property int locateToken: 0
@@ -228,6 +233,21 @@ KCM.SimpleKCM {
         return searchToken;
     }
 
+    function countStatus(n) {
+        if (resultsKind === "nearby") {
+            return resultsApproximate
+                ? i18np("%1 mosque found near your approximate location (from your internet provider). If it isn't near you, search your city above.",
+                        "%1 mosques found near your approximate location (from your internet provider). If none is near you, search your city above.", n)
+                : i18np("%1 mosque found near you — pick yours",
+                        "%1 mosques found near you — pick yours", n);
+        }
+        return resultsApproximate
+            ? i18np("%2 is an approximate location from your internet provider. %1 mosque found there — if this isn't your city, type yours above.",
+                    "%2 is an approximate location from your internet provider. %1 mosques found there — if this isn't your city, type yours above.",
+                    n, resultsApproxCity)
+            : i18np("%1 mosque found — pick yours", "%1 mosques found — pick yours", n);
+    }
+
     function setFirstPage(results) {
         searchResults = results;
         searchPageLoaded = 1;
@@ -260,6 +280,7 @@ KCM.SimpleKCM {
             searchResults = merged;
             searchPageLoaded = nextPage;
             searchHasMore = results.length >= Mawaqit.SEARCH_PAGE_SIZE;
+            setStatus(countStatus(merged.length), false);
         }, function (err) {
             if (token !== page.searchToken) {
                 return;
@@ -279,15 +300,13 @@ KCM.SimpleKCM {
             }
             locating = false;
             setFirstPage(results);
+            resultsKind = "nearby";
+            resultsApproximate = approximate === true;
+            resultsApproxCity = "";
             if (results.length === 0) {
                 setStatus(i18n("No mosques found near you. Try searching by name above."), true);
-            } else if (approximate) {
-                setStatus(i18np("%1 mosque found near your approximate location (from your internet provider). If it isn't near you, search your city above.",
-                                "%1 mosques found near your approximate location (from your internet provider). If none is near you, search your city above.",
-                                results.length), false);
             } else {
-                setStatus(i18np("%1 mosque found near you — pick yours",
-                                "%1 mosques found near you — pick yours", results.length), false);
+                setStatus(countStatus(results.length), false);
             }
         }, function () {
             if (token !== page.searchToken) {
@@ -354,14 +373,11 @@ KCM.SimpleKCM {
             }
             searching = false;
             setFirstPage(results);
-            if (results.length > 0 && approximateCity !== "") {
-                setStatus(i18np("%2 is an approximate location from your internet provider. %1 mosque found there — if this isn't your city, type yours above.",
-                                "%2 is an approximate location from your internet provider. %1 mosques found there — if this isn't your city, type yours above.",
-                                results.length, approximateCity), false);
-                return;
-            }
+            resultsKind = "word";
+            resultsApproximate = approximateCity !== "";
+            resultsApproxCity = approximateCity;
             setStatus(results.length > 0
-                ? i18np("%1 mosque found — pick yours", "%1 mosques found — pick yours", results.length)
+                ? countStatus(results.length)
                 : i18n("No mosques found for “%1”. You can paste your mosque's mawaqit.net address below instead.", word),
                 results.length === 0);
         }, function (err) {

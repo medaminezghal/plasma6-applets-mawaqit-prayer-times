@@ -75,56 +75,6 @@ PlasmoidItem {
     readonly property var retryDelays: [60 * 1000, 5 * 60 * 1000, 15 * 60 * 1000]
     property int retryCount: 0
 
-    /* ---------------------------- time zone ----------------------------- *
-     * The calendar is in the mosque's wall-clock time. When the computer
-     * runs in another zone (travelling, misconfigured clock), comparing
-     * those times against the local clock shifts "next prayer" and the
-     * countdown by the difference. So "now" is taken in the mosque's zone:
-     * the UTC offsets of both zones come from Plasma's time data engine,
-     * created at runtime so a missing plasma5support only disables the
-     * correction. An unknown zone name makes the engine fall back to the
-     * system zone, i.e. no shift.
-     * --------------------------------------------------------------------- */
-    readonly property string mosqueTimeZone: Plasmoid.configuration.cachedTimezone
-    property var tzSource: null
-    // Mosque offset minus local offset, in ms; refreshed every tick
-    property real tzShift: 0
-
-    function updateTzSources() {
-        if (tzSource === null) {
-            return;
-        }
-        var sources = ["Local"];
-        if (mosqueTimeZone !== "" && mosqueTimeZone !== "Local") {
-            sources.push(mosqueTimeZone);
-        }
-        tzSource.connectedSources = sources;
-    }
-
-    function computeTzShift() {
-        if (tzSource === null || mosqueTimeZone === "") {
-            return 0;
-        }
-        var local = tzSource.data["Local"];
-        var mosque = tzSource.data[mosqueTimeZone];
-        if (!local || !mosque
-                || typeof local["Offset"] !== "number"
-                || typeof mosque["Offset"] !== "number") {
-            return 0;
-        }
-        return (mosque["Offset"] - local["Offset"]) * 1000;
-    }
-
-    // Current time as wall-clock time in the mosque's zone
-    function mosqueNow() {
-        return new Date(Date.now() + tzShift);
-    }
-
-    // Only re-points the engine; the shift itself is picked up by tick(),
-    // which also drops the cached next prayer when it changes. Recomputing
-    // the day here would run mid-way through refetch()'s success handler,
-    // before cachedYear is updated, and trigger a second fetch.
-    onMosqueTimeZoneChanged: updateTzSources()
     // Year/month/day packed into one int. Comparing getDate() alone missed a
     // rollover onto the same day number - suspend on 14 Sept, resume on
     // 14 Oct and the widget kept September's row and hijri date until the
@@ -165,7 +115,7 @@ PlasmoidItem {
                 // mismatch, so this is only what gets shown until that
                 // succeeds. Same instinct as nextPrayer()'s Dec-31 estimate.
                 calendarFromPreviousYear =
-                    Plasmoid.configuration.cachedYear !== mosqueNow().getFullYear();
+                    Plasmoid.configuration.cachedYear !== new Date().getFullYear();
             } catch (e) {
                 calendar = null;
             }
@@ -216,9 +166,7 @@ PlasmoidItem {
             errorMessage = "";
             calendar = conf.calendar;
             Plasmoid.configuration.cachedCalendar = JSON.stringify(conf.calendar);
-            Plasmoid.configuration.cachedTimezone = conf.timezone;
-            tzShift = computeTzShift();
-            Plasmoid.configuration.cachedYear = mosqueNow().getFullYear();
+            Plasmoid.configuration.cachedYear = new Date().getFullYear();
             calendarFromPreviousYear = false;
             Plasmoid.configuration.lastFetch = new Date().toISOString();
             Plasmoid.configuration.cachedHijriAdjustment = conf.hijriAdjustment;
@@ -280,7 +228,7 @@ PlasmoidItem {
     /* ---------------------- per-day / per-second ------------------------ */
 
     function recomputeDay(force) {
-        var now = mosqueNow();
+        var now = new Date();
         if (force || dayKey(now) !== lastComputedDay) {
             lastComputedDay = dayKey(now);
             // The cached "next" belongs to the day that just ended. After
@@ -301,6 +249,9 @@ PlasmoidItem {
                 Plasmoid.configuration.cachedHijriForce30);
             if (calendar !== null
                     && Plasmoid.configuration.cachedYear !== now.getFullYear()) {
+                // Until the new year's calendar arrives, last year's is
+                // what is shown; say so, as loadFromCache() does at startup
+                calendarFromPreviousYear = true;
                 refetch(true); // year rollover
             }
         }
@@ -308,14 +259,7 @@ PlasmoidItem {
     }
 
     function tick() {
-        var shift = computeTzShift();
-        if (shift !== tzShift) {
-            tzShift = shift;
-            // "next" was chosen against the old notion of now and could
-            // have skipped a prayer that hasn't happened yet
-            next = null;
-        }
-        var now = mosqueNow();
+        var now = new Date();
         if (dayKey(now) !== lastComputedDay) {
             recomputeDay(false);
             return;
@@ -323,6 +267,7 @@ PlasmoidItem {
         if (calendar === null) {
             next = null;
             countdown = "";
+            countdownHM = "";
             countdownMin = "";
             return;
         }
@@ -373,7 +318,6 @@ PlasmoidItem {
             Plasmoid.configuration.cachedCalendar = "";
             Plasmoid.configuration.cachedYear = 0;
             Plasmoid.configuration.lastFetch = "";
-            Plasmoid.configuration.cachedTimezone = "";
             root.calendar = null;
             root.loadFromCache();
             root.refetch(true);
@@ -381,25 +325,10 @@ PlasmoidItem {
     }
 
     Component.onCompleted: {
-        try {
-            tzSource = Qt.createQmlObject(
-                'import org.kde.plasma.plasma5support as P5Support; '
-                + 'P5Support.DataSource { engine: "time"; interval: 60000 }',
-                root, "tzSource");
-            updateTzSources();
-            tzShift = computeTzShift();
-        } catch (e) {
-            console.log("[mawaqit] time data engine unavailable, no time zone correction: " + e);
-            tzSource = null;
-        }
         loadFromCache();
         // Force a fetch when the stored name is missing (e.g. clobbered by
         // the config dialog), so the real name appears without manual refresh
-        // cachedTimezone was added later: fetch once after upgrading so the
-        // time zone correction doesn't wait for the next scheduled refresh
-        refetch(configured && (Plasmoid.configuration.mosqueName === ""
-                               || (Plasmoid.configuration.cachedCalendar !== ""
-                                   && Plasmoid.configuration.cachedTimezone === "")));
+        refetch(configured && Plasmoid.configuration.mosqueName === "");
     }
 
     /* --------------------------- representations ------------------------ */
@@ -423,9 +352,6 @@ PlasmoidItem {
                  + Mawaqit.inCountdown(countdown, Plasmoid.configuration.labelLanguage);
             if (calendarFromPreviousYear) {
                 sub += "\n" + i18n("Estimated from last year's calendar");
-            }
-            if (tzShift !== 0) {
-                sub += "\n" + i18n("Times are in the mosque's time zone (%1)", mosqueTimeZone);
             }
             return sub;
         }

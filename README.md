@@ -59,12 +59,6 @@ directly to mawaqit.net roughly once a week.
 > **Show more mosques** if yours isn't in the first list. You can always
 > paste your mosque's mawaqit.net address instead.
 
-Prayer times are shown in the mosque's own time zone, as published. If your
-computer runs in a different time zone, the next prayer and the countdown
-are still computed correctly, and the popup notes which zone the times are
-in (this uses Plasma's time data engine; without it no correction is
-applied).
-
 ### About location detection
 
 On KDE Plasma, **"Detect my location" almost always works from your IP
