@@ -124,9 +124,5 @@
             <label>ISO timestamp of the last successful download</label>
             <default></default>
         </entry>
-        <entry name="cachedTimezone" type="String">
-            <label>Mosque time zone (IANA name) from confData; the calendar is in this zone's wall-clock time</label>
-            <default></default>
-        </entry>
     </group>
 </kcfg>

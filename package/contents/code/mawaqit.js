@@ -75,11 +75,7 @@ function fetchConf(slug, onSuccess, onError) {
                     jumua: conf.jumua || null,
                     hijriAdjustment: (typeof conf.hijriAdjustment === "number")
                                      ? conf.hijriAdjustment : 0,
-                    hijriForce30: conf.hijriDateForceTo30 === true,
-                    // IANA name, e.g. "Africa/Tunis". The calendar is in the
-                    // mosque's wall-clock time, which is not necessarily the
-                    // computer's.
-                    timezone: (typeof conf.timezone === "string") ? conf.timezone : ""
+                    hijriForce30: conf.hijriDateForceTo30 === true
                 });
             } catch (e) {
                 onError("Failed to parse confData JSON: " + e);
