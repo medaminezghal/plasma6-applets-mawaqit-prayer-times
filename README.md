@@ -20,10 +20,12 @@ exact timetable your mosque publishes on [mawaqit.net](https://mawaqit.net)
   their names so nothing has to be guessed
 - **Hijri date**: shown in the popup, and optionally in the panel as either
   the spelled-out form (2 ربيع الثاني 1448 هـ) or plain digits (02/04/1448)
-- **Appearance customization**: pick a custom font and adjust the text size,
-  override the text and next-prayer accent colors, and give the widget a
-  custom background with adjustable color, opacity, and corner radius — every
-  option is opt-in and falls back to your Plasma theme
+- **Appearance customization**: pick a custom font, scale the desktop widget
+  or panel popup (panel text follows the panel's thickness), override the
+  text and next-prayer accent colors, and give the widget a custom background
+  with adjustable color, opacity, and corner radius — every option is opt-in
+  and falls back to your Plasma theme. "Show the next prayer in bold" needs a
+  font that has a bold style; with fonts that don't, it has no effect
 - **Mosque finder in settings**: search Mawaqit for mosques in your city
   and pick yours from the list, or let the widget guess your city (see
   [About location detection](#about-location-detection))
