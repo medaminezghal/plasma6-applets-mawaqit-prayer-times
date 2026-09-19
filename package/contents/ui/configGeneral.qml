@@ -23,12 +23,42 @@ KCM.SimpleKCM {
     property alias cfg_usePrayerIconsInPanel: iconsCheck.checked
     property alias cfg_refreshDays: refreshSpin.value
 
-    // Cache keys: declared so the dialog doesn't warn; never touched here
+    // Cache keys: declared so the dialog doesn't warn about unknown initial
+    // properties. Plasma writes every declared cfg_ key back on Apply/OK,
+    // so saveConfig() below refreshes them first; otherwise the snapshot
+    // taken when the page opened would overwrite the widget's live cache.
     property string cfg_cachedCalendar
     property int cfg_cachedYear
     property string cfg_lastFetch
     property int cfg_cachedHijriAdjustment
     property bool cfg_cachedHijriForce30
+    property string cfg_cachedTimezone
+
+    // Called by Plasma's config dialog before it writes the cfg_ keys back.
+    // Keys are written in main.xml order, mosqueSlug first: switching
+    // mosque makes the widget clear its cache right then, and a stale
+    // snapshot written after it would restore the previous mosque's
+    // calendar under the new mosque. So on a switch the cache keys go out
+    // empty; otherwise they carry the live values, making the write-back a
+    // no-op even if the widget refetched while the dialog was open.
+    function saveConfig() {
+        var live = Plasmoid.configuration;
+        // Normally done when the field loses focus; repeated here in case
+        // the dialog is confirmed without that happening
+        cfg_mosqueSlug = Mawaqit.normalizeSlug(cfg_mosqueSlug);
+        var switching = cfg_mosqueSlug !== live.mosqueSlug;
+        // A slug typed or pasted without picking a result leaves the
+        // previous mosque's name behind; the widget fetches the real one
+        if (switching && cfg_mosqueName === live.mosqueName) {
+            cfg_mosqueName = "";
+        }
+        cfg_cachedCalendar = switching ? "" : live.cachedCalendar;
+        cfg_cachedYear = switching ? 0 : live.cachedYear;
+        cfg_lastFetch = switching ? "" : live.lastFetch;
+        cfg_cachedHijriAdjustment = switching ? 0 : live.cachedHijriAdjustment;
+        cfg_cachedHijriForce30 = switching ? false : live.cachedHijriForce30;
+        cfg_cachedTimezone = switching ? "" : live.cachedTimezone;
+    }
 
     /* --------------------------- state ------------------------------ */
     property bool locating: false
@@ -36,6 +66,14 @@ KCM.SimpleKCM {
     property string statusText: ""
     property bool statusIsError: false
     property var searchResults: []
+    // Paging: the API returns Mawaqit.SEARCH_PAGE_SIZE results per page.
+    // searchQuery is the query behind the current list ("" = none);
+    // searchToken makes responses from an older search a no-op.
+    property string searchQuery: ""
+    property int searchPageLoaded: 0
+    property bool searchHasMore: false
+    property bool loadingMore: false
+    property int searchToken: 0
     property var gpsSource: null
     // City filled in by location detection when the fix was only
     // approximate; consumed by the next doSearch()
@@ -148,11 +186,68 @@ KCM.SimpleKCM {
             : i18n("Detected: %1", city);
     }
 
+    // Start a new result list for query. Returns the token the callbacks
+    // must check before touching the list.
+    function beginResults(query) {
+        searchToken++;
+        searchQuery = query;
+        searchPageLoaded = 0;
+        searchHasMore = false;
+        loadingMore = false;
+        searchResults = [];
+        return searchToken;
+    }
+
+    function setFirstPage(results) {
+        searchResults = results;
+        searchPageLoaded = 1;
+        searchHasMore = results.length >= Mawaqit.SEARCH_PAGE_SIZE;
+    }
+
+    function loadMore() {
+        if (searchQuery === "" || !searchHasMore || loadingMore) {
+            return;
+        }
+        loadingMore = true;
+        var token = searchToken;
+        var nextPage = searchPageLoaded + 1;
+        Mawaqit.searchPage(searchQuery, nextPage, function (results) {
+            if (token !== page.searchToken) {
+                return;
+            }
+            loadingMore = false;
+            var seen = {};
+            var merged = searchResults.slice();
+            for (var i = 0; i < merged.length; i++) {
+                seen[merged[i].slug] = true;
+            }
+            for (var j = 0; j < results.length; j++) {
+                if (!seen[results[j].slug]) {
+                    seen[results[j].slug] = true;
+                    merged.push(results[j]);
+                }
+            }
+            searchResults = merged;
+            searchPageLoaded = nextPage;
+            searchHasMore = results.length >= Mawaqit.SEARCH_PAGE_SIZE;
+        }, function (err) {
+            if (token !== page.searchToken) {
+                return;
+            }
+            loadingMore = false;
+            setStatus(i18n("Couldn't load more mosques (%1)", err), true);
+        });
+    }
+
     function onCoordinates(lat, lon, cityHint, approximate) {
         setStatus(i18n("Searching for mosques near you…"), false);
-        Mawaqit.searchMosquesByCoords(lat, lon, function (results) {
+        var token = beginResults(Mawaqit.coordsQuery(lat, lon));
+        Mawaqit.searchPage(page.searchQuery, 1, function (results) {
+            if (token !== page.searchToken) {
+                return;
+            }
             locating = false;
-            searchResults = results;
+            setFirstPage(results);
             if (results.length === 0) {
                 setStatus(i18n("No mosques found near you. Try searching by name above."), true);
             } else if (approximate) {
@@ -164,6 +259,9 @@ KCM.SimpleKCM {
                                 "%1 mosques found near you — pick yours", results.length), false);
             }
         }, function () {
+            if (token !== page.searchToken) {
+                return;
+            }
             if (cityHint !== "") {
                 locating = false;
                 searchField.text = cityHint;
@@ -208,11 +306,13 @@ KCM.SimpleKCM {
             approximateCity = "";
         }
         searching = true;
-        searchResults = [];
-        Mawaqit.searchMosques(word, function (results, via) {
+        var token = beginResults(Mawaqit.wordQuery(word));
+        Mawaqit.searchPage(page.searchQuery, 1, function (results) {
+            if (token !== page.searchToken) {
+                return;
+            }
             searching = false;
-            searchResults = results;
-            console.log("[mawaqit] search via " + via + ": " + results.length + " results");
+            setFirstPage(results);
             if (results.length > 0 && approximateCity !== "") {
                 setStatus(i18np("%2 is an approximate location from your internet provider. %1 mosque found there — if this isn't your city, type yours above.",
                                 "%2 is an approximate location from your internet provider. %1 mosques found there — if this isn't your city, type yours above.",
@@ -224,6 +324,9 @@ KCM.SimpleKCM {
                 : i18n("No mosques found for “%1”. You can paste your mosque's mawaqit.net address below instead.", word),
                 results.length === 0);
         }, function (err) {
+            if (token !== page.searchToken) {
+                return;
+            }
             searching = false;
             setStatus(i18n("Search failed (%1). You can paste your mosque's mawaqit.net address below instead.", err), true);
         });
@@ -383,6 +486,24 @@ KCM.SimpleKCM {
                         page.setStatus(i18n("Selected: %1", modelData.label), false);
                     }
                 }
+            }
+        }
+
+        // Mawaqit returns results a page at a time, so a city with many
+        // mosques needs this to reach the ones past the first page
+        RowLayout {
+            visible: page.searchHasMore && page.searchResults.length > 0
+            QQC2.Button {
+                icon.name: "go-down"
+                text: i18n("Show more mosques")
+                enabled: !page.loadingMore
+                onClicked: page.loadMore()
+            }
+            QQC2.BusyIndicator {
+                visible: page.loadingMore
+                running: visible
+                implicitWidth: Kirigami.Units.iconSizes.small
+                implicitHeight: Kirigami.Units.iconSizes.small
             }
         }
 

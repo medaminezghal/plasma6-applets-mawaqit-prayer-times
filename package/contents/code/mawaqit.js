@@ -75,7 +75,11 @@ function fetchConf(slug, onSuccess, onError) {
                     jumua: conf.jumua || null,
                     hijriAdjustment: (typeof conf.hijriAdjustment === "number")
                                      ? conf.hijriAdjustment : 0,
-                    hijriForce30: conf.hijriDateForceTo30 === true
+                    hijriForce30: conf.hijriDateForceTo30 === true,
+                    // IANA name, e.g. "Africa/Tunis". The calendar is in the
+                    // mosque's wall-clock time, which is not necessarily the
+                    // computer's.
+                    timezone: (typeof conf.timezone === "string") ? conf.timezone : ""
                 });
             } catch (e) {
                 onError("Failed to parse confData JSON: " + e);
@@ -98,29 +102,39 @@ function fetchConf(slug, onSuccess, onError) {
 }
 
 /* --------------------------- mosque search ---------------------------- *
- * Layered:
- *   1. JSON endpoint api/2.0/mosque/search (word or lat/lon). May be
- *      auth-walled; if so we get 401/403 and fall through.
- *   2. Scrape the public /en/search page for mosque links.
- * Callers should offer the mawaqit.net map + paste-URL flow when both
- * yield nothing.
+ * Mawaqit's public JSON endpoint api/2.0/mosque/search takes either a
+ * keyword (word=) or coordinates (lat=&lon=, ordered by proximity) and
+ * returns SEARCH_PAGE_SIZE results per page, with page=1 the first; a page
+ * past the end returns an empty array. The old fallback that scraped
+ * /en/search was dropped: that page now answers 404, so it only turned an
+ * outage into a misleading "not found".
  * --------------------------------------------------------------------- */
 
-function apiSearch(query, onSuccess, onFail) {
+var SEARCH_PAGE_SIZE = 10;
+
+/**
+ * query  "word=..." or "lat=...&lon=..." (already URL-encoded)
+ * page   1-based page number
+ */
+function searchPage(query, page, onSuccess, onError) {
     var xhr = new XMLHttpRequest();
-    xhr.open("GET", BASE + "/api/2.0/mosque/search?" + query);
+    xhr.open("GET", BASE + "/api/2.0/mosque/search?" + query + "&page=" + (page || 1));
     xhr.setRequestHeader("Accept", "application/json");
     xhr.onreadystatechange = function () {
         if (xhr.readyState !== XMLHttpRequest.DONE) return;
+        if (xhr.status === 0) {
+            onError("could not reach mawaqit.net");
+            return;
+        }
         if (xhr.status !== 200) {
-            console.log("[mawaqit] api search HTTP " + xhr.status);
-            onFail("HTTP " + xhr.status);
+            console.log("[mawaqit] search HTTP " + xhr.status);
+            onError("HTTP " + xhr.status + " from mawaqit.net");
             return;
         }
         try {
             var arr = JSON.parse(xhr.responseText);
             if (!Array.isArray(arr)) {
-                onFail("unexpected payload");
+                onError("unexpected response from mawaqit.net");
                 return;
             }
             var results = [];
@@ -135,62 +149,18 @@ function apiSearch(query, onSuccess, onFail) {
             }
             onSuccess(results);
         } catch (e) {
-            onFail("parse: " + e);
+            onError("unexpected response from mawaqit.net");
         }
     };
     xhr.send();
 }
 
-var RESERVED_SLUGS = [
-    "search", "map", "login", "register", "logout", "about", "faq",
-    "backoffice", "contact", "terms", "privacy", "stats", "mosque",
-    "assets", "bundles", "upload", "js", "css", "img"
-];
-
-function scrapeSearch(word, onSuccess, onError) {
-    var xhr = new XMLHttpRequest();
-    xhr.open("GET", BASE + "/en/search?word=" + encodeURIComponent(word));
-    xhr.onreadystatechange = function () {
-        if (xhr.readyState !== XMLHttpRequest.DONE) return;
-        if (xhr.status !== 200) {
-            onError("HTTP " + xhr.status + " from mawaqit.net search");
-            return;
-        }
-        var html = xhr.responseText;
-        var results = [];
-        var seen = {};
-        var re = /<a[^>]+href="(?:https?:\/\/mawaqit\.net)?\/(?:en|fr|ar|de|es|it|nl|pt|tr)\/([a-z0-9][a-z0-9\-]*)"[^>]*>([\s\S]*?)<\/a>/gi;
-        var m;
-        while ((m = re.exec(html)) !== null) {
-            var slug = m[1];
-            if (seen[slug] || RESERVED_SLUGS.indexOf(slug) !== -1) continue;
-            var label = m[2].replace(/<[^>]*>/g, " ")
-                .replace(/&amp;/g, "&").replace(/&#39;|&apos;/g, "'")
-                .replace(/&quot;/g, "\"").replace(/\s+/g, " ").trim();
-            seen[slug] = true;
-            results.push({ slug: slug, label: label.length > 0 ? label : slug });
-        }
-        onSuccess(results);
-    };
-    xhr.send();
+function wordQuery(word) {
+    return "word=" + encodeURIComponent(word);
 }
 
-/** Search by keyword: JSON API first, page scrape as fallback. */
-function searchMosques(word, onSuccess, onError) {
-    apiSearch("word=" + encodeURIComponent(word), function (results) {
-        onSuccess(results, "api");
-    }, function () {
-        scrapeSearch(word, function (results) {
-            onSuccess(results, "scrape");
-        }, onError);
-    });
-}
-
-/** Proximity search by coordinates (only works if the endpoint is open). */
-function searchMosquesByCoords(lat, lon, onSuccess, onError) {
-    apiSearch("lat=" + lat + "&lon=" + lon, function (results) {
-        onSuccess(results, "api");
-    }, onError);
+function coordsQuery(lat, lon) {
+    return "lat=" + lat + "&lon=" + lon;
 }
 
 /* ------------------------------ location ------------------------------ */
