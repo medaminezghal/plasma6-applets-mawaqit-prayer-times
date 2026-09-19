@@ -37,8 +37,15 @@ KCM.SimpleKCM {
     property bool statusIsError: false
     property var searchResults: []
     property var gpsSource: null
+    // City filled in by location detection when the fix was only
+    // approximate; consumed by the next doSearch()
+    property string pendingApproximateCity: ""
 
     property string lastVerifiedSlug: ""
+
+    // A GeoClue fix less accurate than this (metres) is treated like an IP
+    // lookup: good for the country, not for the city
+    readonly property real preciseAccuracyMeters: 3000
 
     onCfg_mosqueSlugChanged: {
         // Never rewrite the field while the user is typing in it — that
@@ -59,22 +66,62 @@ KCM.SimpleKCM {
         locating = true;
         setStatus(i18n("Detecting your location…"), false);
         try {
+            // Created at runtime so Qt Positioning stays an optional
+            // dependency. On Plasma, GeoClue usually refuses the request
+            // (its default config wants a location agent Plasma doesn't
+            // run); failed() lets us fall back right away instead of
+            // waiting for the timeout.
             gpsSource = Qt.createQmlObject(
-                'import QtPositioning; PositionSource { active: true; updateInterval: 1000 }',
+                'import QtPositioning; PositionSource {'
+                + ' signal failed();'
+                + ' readonly property bool hasError: sourceError !== PositionSource.NoError;'
+                + ' active: true; updateInterval: 1000;'
+                + ' onSourceErrorChanged: if (hasError) failed()'
+                + ' }',
                 page, "gpsSource");
+            // Errors can already be set during creation (e.g. no GeoClue on
+            // D-Bus), before failed() can be connected
+            if (!gpsSource.valid || gpsSource.hasError) {
+                console.log("[mawaqit] positioning unavailable (valid: "
+                            + gpsSource.valid + ", error: " + gpsSource.sourceError + ")");
+                gpsFailed();
+                return;
+            }
+            gpsSource.failed.connect(function () {
+                console.log("[mawaqit] positioning source error " + gpsSource.sourceError);
+                gpsFailed();
+            });
             gpsSource.positionChanged.connect(function () {
-                var c = gpsSource.position.coordinate;
+                if (gpsSource === null) {
+                    return;
+                }
+                var p = gpsSource.position;
+                var c = p.coordinate;
                 if (c && !isNaN(c.latitude)) {
+                    // GeoClue on a wired machine only has its own IP-based
+                    // source, which is no better than our IP lookup
+                    var approximate = !p.horizontalAccuracyValid
+                        || p.horizontalAccuracy > page.preciseAccuracyMeters;
                     stopGps();
                     gpsTimeout.stop();
-                    onCoordinates(c.latitude, c.longitude, "");
+                    onCoordinates(c.latitude, c.longitude, "", approximate);
                 }
             });
             gpsTimeout.restart();
         } catch (e) {
             console.log("[mawaqit] QtPositioning unavailable: " + e);
+            gpsSource = null;
             ipFallback();
         }
+    }
+
+    function gpsFailed() {
+        if (gpsSource === null) {
+            return;
+        }
+        stopGps();
+        gpsTimeout.stop();
+        ipFallback();
     }
 
     function stopGps() {
@@ -88,34 +135,49 @@ KCM.SimpleKCM {
     function ipFallback() {
         setStatus(i18n("Locating via your IP address…"), false);
         Mawaqit.ipLocate(function (loc) {
-            onCoordinates(loc.lat, loc.lon, loc.city);
+            onCoordinates(loc.lat, loc.lon, loc.city, true);
         }, function (err) {
             locating = false;
             setStatus(i18n("Location detection failed (%1). Type your city above, or paste your mosque's mawaqit.net address below.", err), true);
         });
     }
 
-    function onCoordinates(lat, lon, cityHint) {
+    function detectedStatus(city, approximate) {
+        return approximate
+            ? i18n("Approximate location from your internet provider: %1. If this isn't your city, type yours above.", city)
+            : i18n("Detected: %1", city);
+    }
+
+    function onCoordinates(lat, lon, cityHint, approximate) {
         setStatus(i18n("Searching for mosques near you…"), false);
         Mawaqit.searchMosquesByCoords(lat, lon, function (results) {
             locating = false;
             searchResults = results;
-            setStatus(results.length > 0
-                ? i18np("%1 mosque found near you — pick yours",
-                        "%1 mosques found near you — pick yours", results.length)
-                : i18n("No mosques found near you. Try searching by name above."),
-                results.length === 0);
+            if (results.length === 0) {
+                setStatus(i18n("No mosques found near you. Try searching by name above."), true);
+            } else if (approximate) {
+                setStatus(i18np("%1 mosque found near your approximate location (from your internet provider). If it isn't near you, search your city above.",
+                                "%1 mosques found near your approximate location (from your internet provider). If none is near you, search your city above.",
+                                results.length), false);
+            } else {
+                setStatus(i18np("%1 mosque found near you — pick yours",
+                                "%1 mosques found near you — pick yours", results.length), false);
+            }
         }, function () {
             if (cityHint !== "") {
                 locating = false;
                 searchField.text = cityHint;
-                setStatus(i18n("Detected: %1", cityHint), false);
+                // doSearch() replaces the status once results arrive, so the
+                // approximate warning is carried into the results message
+                page.pendingApproximateCity = approximate ? cityHint : "";
+                setStatus(detectedStatus(cityHint, approximate), false);
                 doSearch();
             } else {
                 Mawaqit.reverseGeocode(lat, lon, function (city) {
                     locating = false;
                     searchField.text = city;
-                    setStatus(i18n("Detected: %1", city), false);
+                    page.pendingApproximateCity = approximate ? city : "";
+                    setStatus(detectedStatus(city, approximate), false);
                     doSearch();
                 }, function (err) {
                     console.log("[mawaqit] reverse geocode failed: " + err);
@@ -128,10 +190,7 @@ KCM.SimpleKCM {
     Timer {
         id: gpsTimeout
         interval: 8000
-        onTriggered: {
-            page.stopGps();
-            page.ipFallback();
-        }
+        onTriggered: page.gpsFailed()
     }
 
     /* ------------------------- search flow -------------------------- */
@@ -141,12 +200,25 @@ KCM.SimpleKCM {
         if (word === "") {
             return;
         }
+        // Only a search started by detection keeps the approximate warning;
+        // a search the user typed is taken at face value
+        var approximateCity = page.pendingApproximateCity;
+        page.pendingApproximateCity = "";
+        if (approximateCity !== "" && approximateCity !== word) {
+            approximateCity = "";
+        }
         searching = true;
         searchResults = [];
         Mawaqit.searchMosques(word, function (results, via) {
             searching = false;
             searchResults = results;
             console.log("[mawaqit] search via " + via + ": " + results.length + " results");
+            if (results.length > 0 && approximateCity !== "") {
+                setStatus(i18np("%2 is an approximate location from your internet provider. %1 mosque found there — if this isn't your city, type yours above.",
+                                "%2 is an approximate location from your internet provider. %1 mosques found there — if this isn't your city, type yours above.",
+                                results.length, approximateCity), false);
+                return;
+            }
             setStatus(results.length > 0
                 ? i18np("%1 mosque found — pick yours", "%1 mosques found — pick yours", results.length)
                 : i18n("No mosques found for “%1”. You can paste your mosque's mawaqit.net address below instead.", word),
@@ -236,6 +308,15 @@ KCM.SimpleKCM {
                 text: i18n("Detect my location")
                 enabled: !page.locating
                 onClicked: page.detectLocation()
+            }
+
+            QQC2.Label {
+                Layout.fillWidth: true
+                Layout.maximumWidth: Kirigami.Units.gridUnit * 22
+                text: i18n("Detection usually relies on your internet provider's location, which can be in another city (often the capital) on any connection, including mobile data. Searching your city by name is more reliable.")
+                font.pointSize: Kirigami.Theme.smallFont.pointSize
+                opacity: 0.7
+                wrapMode: Text.WordWrap
             }
 
             RowLayout {
