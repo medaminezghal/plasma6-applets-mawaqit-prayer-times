@@ -293,7 +293,8 @@ Item {
     /* --------------------------- Loading --------------------------- */
     PlasmaComponents3.BusyIndicator {
         anchors.centerIn: parent
-        visible: root.configured && root.calendar === null && root.fetching
+        visible: root.configured && root.calendar === null
+                 && (root.fetching || root.errorMessage === "")
         running: visible
     }
 
@@ -301,7 +302,13 @@ Item {
     PlasmaExtras.PlaceholderMessage {
         anchors.centerIn: parent
         width: parent.width - Kirigami.Units.gridUnit * 2
-        visible: root.configured && root.calendar === null && !root.fetching
+        // errorMessage is the explanation, so without it this renders as a
+        // bare title over an empty line. That happens for a moment right
+        // after a mosque is chosen: the slug is written, calendar is still
+        // null and refetch() has not set fetching yet. Let the busy
+        // indicator below cover that gap instead.
+        visible: root.configured && root.calendar === null
+                 && !root.fetching && root.errorMessage !== ""
         iconName: "network-disconnect"
         text: i18n("Couldn't load prayer times")
         explanation: root.errorMessage
