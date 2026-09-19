@@ -74,6 +74,9 @@ KCM.SimpleKCM {
     property bool searchHasMore: false
     property bool loadingMore: false
     property int searchToken: 0
+    // Same idea for location detection, whose steps (GeoClue, IP lookup,
+    // reverse geocoding) are all asynchronous
+    property int locateToken: 0
     property var gpsSource: null
     // City filled in by location detection when the fix was only
     // approximate; consumed by the next doSearch()
@@ -100,7 +103,27 @@ KCM.SimpleKCM {
 
     /* ------------------------ location flow ------------------------- */
 
+    // Whatever starts a new search or detection cancels the other one and
+    // clears its busy flag itself. A superseded callback only returns, so
+    // without this its flag stayed set for good: starting a detection
+    // while a search was running left the Search button disabled, and
+    // searching while detecting left "Detect my location" disabled.
+    function cancelSearch() {
+        searchToken++;
+        searching = false;
+        loadingMore = false;
+    }
+
+    function cancelDetection() {
+        locateToken++;
+        stopGps();
+        gpsTimeout.stop();
+        locating = false;
+    }
+
     function detectLocation() {
+        cancelSearch();
+        locateToken++;
         locating = true;
         setStatus(i18n("Detecting your location…"), false);
         try {
@@ -171,10 +194,17 @@ KCM.SimpleKCM {
     }
 
     function ipFallback() {
+        var token = locateToken;
         setStatus(i18n("Locating via your IP address…"), false);
         Mawaqit.ipLocate(function (loc) {
+            if (token !== page.locateToken) {
+                return;
+            }
             onCoordinates(loc.lat, loc.lon, loc.city, true);
         }, function (err) {
+            if (token !== page.locateToken) {
+                return;
+            }
             locating = false;
             setStatus(i18n("Location detection failed (%1). Type your city above, or paste your mosque's mawaqit.net address below.", err), true);
         });
@@ -240,6 +270,7 @@ KCM.SimpleKCM {
     }
 
     function onCoordinates(lat, lon, cityHint, approximate) {
+        var locToken = locateToken;
         setStatus(i18n("Searching for mosques near you…"), false);
         var token = beginResults(Mawaqit.coordsQuery(lat, lon));
         Mawaqit.searchPage(page.searchQuery, 1, function (results) {
@@ -272,12 +303,18 @@ KCM.SimpleKCM {
                 doSearch();
             } else {
                 Mawaqit.reverseGeocode(lat, lon, function (city) {
+                    if (locToken !== page.locateToken) {
+                        return;
+                    }
                     locating = false;
                     searchField.text = city;
                     page.pendingApproximateCity = approximate ? city : "";
                     setStatus(detectedStatus(city, approximate), false);
                     doSearch();
                 }, function (err) {
+                    if (locToken !== page.locateToken) {
+                        return;
+                    }
                     console.log("[mawaqit] reverse geocode failed: " + err);
                     ipFallback();
                 });
@@ -298,6 +335,10 @@ KCM.SimpleKCM {
         if (word === "") {
             return;
         }
+        // A search the user starts wins over a detection still running;
+        // when detection itself falls back to a city search it has already
+        // finished, so this changes nothing there
+        cancelDetection();
         // Only a search started by detection keeps the approximate warning;
         // a search the user typed is taken at face value
         var approximateCity = page.pendingApproximateCity;

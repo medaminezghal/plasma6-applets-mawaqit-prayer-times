@@ -255,16 +255,23 @@ PlasmoidItem {
         onTriggered: root.refetch(root.fetchForced)
     }
 
+    // Drop the outstanding request: its callback becomes a no-op
+    function cancelFetch() {
+        fetchToken++;
+        fetchWatchdog.stop();
+        if (pendingRequest !== null) {
+            var request = pendingRequest;
+            pendingRequest = null;
+            request.abort();
+        }
+        fetching = false;
+    }
+
     Timer {
         id: fetchWatchdog
         interval: 30000
         onTriggered: {
-            root.fetchToken++; // any late callback is now ignored
-            if (root.pendingRequest !== null) {
-                root.pendingRequest.abort();
-                root.pendingRequest = null;
-            }
-            root.fetching = false;
+            root.cancelFetch();
             root.errorMessage = i18n("mawaqit.net did not respond in time");
             root.scheduleRetry();
         }
@@ -358,6 +365,11 @@ PlasmoidItem {
             root.fetchedName = "";
             root.retryCount = 0;
             retryTimer.stop();
+            // A fetch still running for the previous mosque would make
+            // refetch() below return at its "fetching" guard, and its own
+            // result is discarded as belonging to another slug, so the new
+            // mosque would stay on "Loading" until the hourly timer
+            root.cancelFetch();
             Plasmoid.configuration.cachedCalendar = "";
             Plasmoid.configuration.cachedYear = 0;
             Plasmoid.configuration.lastFetch = "";
