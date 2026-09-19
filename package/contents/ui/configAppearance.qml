@@ -121,6 +121,43 @@ KCM.SimpleKCM {
     Kirigami.FormLayout {
         Layout.fillWidth: true
 
+        /* -------------------------- Size -------------------------- */
+        Kirigami.Separator {
+            Kirigami.FormData.isSection: true
+            Kirigami.FormData.label: i18n("Size")
+        }
+
+        // The slider scales the expanded view only: the desktop widget, or
+        // the popup when the widget sits in a panel. Panel text follows the
+        // panel thickness instead, so name what actually changes.
+        RowLayout {
+            Kirigami.FormData.label: page.inPanel ? i18n("Popup size:") : i18n("Widget size:")
+            Layout.fillWidth: true
+
+            QQC2.Slider {
+                id: scaleSlider
+                Layout.fillWidth: true
+                Layout.preferredWidth: Kirigami.Units.gridUnit * 12
+                from: 0.7
+                to: 2.0
+                stepSize: 0.05
+            }
+            QQC2.Label {
+                text: i18n("%1%", Math.round(scaleSlider.value * 100))
+                Layout.minimumWidth: Kirigami.Units.gridUnit * 3
+            }
+        }
+
+        QQC2.Label {
+            Layout.fillWidth: true
+            Layout.maximumWidth: Kirigami.Units.gridUnit * 22
+            visible: page.inPanel
+            text: i18n("Text in the panel itself follows the panel's thickness.")
+            font.pointSize: Kirigami.Theme.smallFont.pointSize
+            opacity: 0.7
+            wrapMode: Text.WordWrap
+        }
+
         /* ------------------------- Fonts -------------------------- */
         Kirigami.Separator {
             Kirigami.FormData.isSection: true
@@ -166,37 +203,6 @@ KCM.SimpleKCM {
             Layout.maximumWidth: Kirigami.Units.gridUnit * 22
             visible: page.cfg_fontFamily !== ""
             text: i18n("Some fonts have no bold style. With those, “Show the next prayer in bold” has no effect; the next prayer is still marked by its accent color.")
-            font.pointSize: Kirigami.Theme.smallFont.pointSize
-            opacity: 0.7
-            wrapMode: Text.WordWrap
-        }
-
-        // The slider scales the expanded view only: the desktop widget, or
-        // the popup when the widget sits in a panel. Panel text follows the
-        // panel thickness instead, so name what actually changes.
-        RowLayout {
-            Kirigami.FormData.label: page.inPanel ? i18n("Popup size:") : i18n("Widget size:")
-            Layout.fillWidth: true
-
-            QQC2.Slider {
-                id: scaleSlider
-                Layout.fillWidth: true
-                Layout.preferredWidth: Kirigami.Units.gridUnit * 12
-                from: 0.7
-                to: 2.0
-                stepSize: 0.05
-            }
-            QQC2.Label {
-                text: i18n("%1%", Math.round(scaleSlider.value * 100))
-                Layout.minimumWidth: Kirigami.Units.gridUnit * 3
-            }
-        }
-
-        QQC2.Label {
-            Layout.fillWidth: true
-            Layout.maximumWidth: Kirigami.Units.gridUnit * 22
-            visible: page.inPanel
-            text: i18n("Text in the panel itself follows the panel's thickness.")
             font.pointSize: Kirigami.Theme.smallFont.pointSize
             opacity: 0.7
             wrapMode: Text.WordWrap
