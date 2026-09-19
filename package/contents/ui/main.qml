@@ -78,6 +78,7 @@ PlasmoidItem {
     property string hijriDateNumeric: ""
     property bool fetching: false
     property string errorMessage: ""
+    property bool calendarFromPreviousYear: false
     // Outstanding request plus a token identifying it. QML's XMLHttpRequest
     // has no timeout (QTBUG-38096), so a connection that is accepted and then
     // stalls - captive portal, half-open socket after a resume - would leave
@@ -113,10 +114,20 @@ PlasmoidItem {
 
     function loadFromCache() {
         calendar = null;
+        calendarFromPreviousYear = false;
         var cached = Plasmoid.configuration.cachedCalendar;
-        if (cached !== "" && Plasmoid.configuration.cachedYear === new Date().getFullYear()) {
+        if (cached !== "") {
             try {
                 calendar = JSON.parse(cached);
+                // A calendar from an earlier year is still far better than
+                // nothing: prayer times move by a couple of minutes year to
+                // year, so on 1 January with no network the widget shows
+                // near-correct times instead of an error over a full year of
+                // usable data. recomputeDay() already refetches on a year
+                // mismatch, so this is only what gets shown until that
+                // succeeds. Same instinct as nextPrayer()'s Dec-31 estimate.
+                calendarFromPreviousYear =
+                    Plasmoid.configuration.cachedYear !== new Date().getFullYear();
             } catch (e) {
                 calendar = null;
             }
@@ -165,6 +176,7 @@ PlasmoidItem {
             calendar = conf.calendar;
             Plasmoid.configuration.cachedCalendar = JSON.stringify(conf.calendar);
             Plasmoid.configuration.cachedYear = new Date().getFullYear();
+            calendarFromPreviousYear = false;
             Plasmoid.configuration.lastFetch = new Date().toISOString();
             Plasmoid.configuration.cachedHijriAdjustment = conf.hijriAdjustment;
             Plasmoid.configuration.cachedHijriForce30 = conf.hijriForce30;
@@ -309,9 +321,13 @@ PlasmoidItem {
             return i18n("Right-click → Configure to choose a mosque");
         }
         if (next) {
-            return hijriDateText + "\n"
+            var sub = hijriDateText + "\n"
                  + nextName + " " + nextTimeFormatted + " — "
                  + Mawaqit.inCountdown(countdown, Plasmoid.configuration.labelLanguage);
+            if (calendarFromPreviousYear) {
+                sub += "\n" + i18n("Estimated from last year's calendar");
+            }
+            return sub;
         }
         return errorMessage !== "" ? errorMessage : i18n("Loading prayer times…");
     }
