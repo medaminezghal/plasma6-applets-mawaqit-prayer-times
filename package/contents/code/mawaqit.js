@@ -533,9 +533,15 @@ function formatCountdown(ms, langSetting) {
     return m + U.m + " " + pad(s) + U.s;
 }
 
-/** Accept a full mawaqit.net URL or bare slug; return the slug. */
+/**
+ * Accept a full mawaqit.net URL or bare slug; return the slug. Besides the
+ * regular page (/fr/<slug>), Mawaqit serves the same mosque at
+ * /fr/m/<slug> (mobile view, redirects to the regular page) and
+ * /fr/w/<slug> (widget page); skip that segment so a link copied from a
+ * phone or a mosque's website resolves too.
+ */
 function normalizeSlug(text) {
-    var m = text.match(/mawaqit\.net\/(?:[a-z]{2}\/)?([A-Za-z0-9][A-Za-z0-9\-]*)/);
+    var m = text.match(/mawaqit\.net\/(?:[a-z]{2}\/)?(?:[mw]\/)?([A-Za-z0-9][A-Za-z0-9\-]*)/);
     if (m) return m[1].toLowerCase();
     return text.trim().toLowerCase();
 }
