@@ -51,7 +51,18 @@ against what Mawaqit displays — so the widget shows the date on your
 mosque's own screens rather than a calendar that quietly disagrees with it.
 
 No account, no API key, no third-party server. Each installation talks
-directly to mawaqit.net roughly once a week.
+directly to mawaqit.net roughly once a week, and once a day around the end
+of each Hijri month, so a new adjustment after the moon sighting shows up
+the next day.
+
+### If the Hijri date is off by a day
+
+The widget cannot know when a new month begins in your community — it
+shows exactly what your mosque publishes. If the date is wrong, it is wrong
+on Mawaqit too, and only **your mosque's administrators** can fix it: ask
+them to update the Hijri date adjustment in their Mawaqit settings. The
+widget picks up the change on its next refresh, or right away with
+right-click → **Refresh prayer times**.
 
 > **Note:** "Detect my location" asks Mawaqit's public search for the
 > mosques closest to the detected coordinates, and falls back to searching
