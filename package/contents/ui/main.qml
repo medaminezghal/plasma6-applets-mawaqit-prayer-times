@@ -131,7 +131,24 @@ PlasmoidItem {
         if (last === "") {
             return true;
         }
-        var ageDays = (Date.now() - Date.parse(last)) / 86400000;
+        var lastDate = new Date(last);
+        if (isNaN(lastDate.getTime())) {
+            return true;
+        }
+        var now = new Date();
+        // Around the end of a hijri month the admin updates hijriAdjustment
+        // (or the force-30 flag) after the moon sighting, usually in the
+        // evening. Refetch once per day from day 28 through day 1, so the
+        // change shows up the next day instead of up to refreshDays later.
+        // Day 1 is included because a 29-day month rolls from 29 straight
+        // to 1, and a changed adjustment can land on either side of it.
+        var h = Mawaqit.gregorianToHijri(now,
+                                         Plasmoid.configuration.cachedHijriAdjustment,
+                                         Plasmoid.configuration.cachedHijriForce30);
+        if ((h.day >= 28 || h.day === 1) && dayKey(lastDate) !== dayKey(now)) {
+            return true;
+        }
+        var ageDays = (now.getTime() - lastDate.getTime()) / 86400000;
         return ageDays >= Plasmoid.configuration.refreshDays;
     }
 
@@ -253,6 +270,10 @@ PlasmoidItem {
                 // what is shown; say so, as loadFromCache() does at startup
                 calendarFromPreviousYear = true;
                 refetch(true); // year rollover
+            } else if (!force) {
+                // A new day: check right away rather than waiting up to an
+                // hour for the hourly timer (matters at hijri month end)
+                refetch(false);
             }
         }
         tick();
