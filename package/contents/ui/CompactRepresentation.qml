@@ -79,8 +79,7 @@ MouseArea {
     // fitted label and a full single line
     readonly property real verticalLinePx: Math.round(Math.min(panelThickness * 0.42,
                                                                maxPanelPx) * panelScale)
-    // Smallest size the minutes line may shrink to before its unit is
-    // dropped (see the label in verticalComp)
+    // Smallest size HorizontalFit may shrink either line to
     readonly property int minMinutesPx: 7
 
     // In "all prayers" mode the next prayer carries its countdown underneath,
@@ -167,7 +166,7 @@ MouseArea {
                 Layout.alignment: Qt.AlignHCenter
                 // Minutes line under the icon, cut from the panel thickness
                 // like the horizontal sizes; HorizontalFit only steps in if
-                // the string is wider than the panel
+                // the number is wider than the panel (3 digits after Isha)
                 Layout.preferredWidth: compact.panelThickness
                 Layout.maximumWidth: compact.panelThickness
                 Layout.preferredHeight: compact.verticalLinePx
@@ -176,24 +175,29 @@ MouseArea {
                 fontSizeMode: Text.HorizontalFit
                 minimumPixelSize: compact.minMinutesPx
                 visible: compact.ready && root.countdownMin !== ""
-                // The unit goes only when the whole string still fits the
-                // panel's width at the smallest size HorizontalFit may use;
-                // otherwise the bare minutes are shown rather than letting
-                // "540min" spill out of a thin panel
-                text: minutesFit.advanceWidth <= compact.panelThickness
-                      ? minutesFit.text
-                      : root.countdownMin
+                text: root.countdownMin
                 font.family: compact.appFont
                 font.pixelSize: compact.verticalLinePx
                 color: root.panelTextColor
+            }
 
-                TextMetrics {
-                    id: minutesFit
-                    font.family: compact.appFont
-                    font.pixelSize: compact.minMinutesPx
-                    text: root.countdownMin
-                          + Mawaqit.uiString("m", Plasmoid.configuration.labelLanguage)
-                }
+            // The unit on its own line (m / د / min), at the same size as the
+            // minutes, so its length in any language never shrinks them;
+            // only this line shrinks if the unit is wider than the panel
+            PlasmaComponents3.Label {
+                Layout.alignment: Qt.AlignHCenter
+                Layout.preferredWidth: compact.panelThickness
+                Layout.maximumWidth: compact.panelThickness
+                Layout.preferredHeight: compact.verticalLinePx
+                horizontalAlignment: Text.AlignHCenter
+                verticalAlignment: Text.AlignVCenter
+                fontSizeMode: Text.HorizontalFit
+                minimumPixelSize: compact.minMinutesPx
+                visible: minutesLabel.visible
+                text: Mawaqit.uiString("m", Plasmoid.configuration.labelLanguage)
+                font.family: compact.appFont
+                font.pixelSize: compact.verticalLinePx
+                color: root.panelTextColor
             }
         }
     }
