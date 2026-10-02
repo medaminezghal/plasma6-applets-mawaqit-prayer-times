@@ -75,6 +75,9 @@ MouseArea {
     // fitted label and a full single line
     readonly property real verticalLinePx: Math.min(Math.round(panelThickness * 0.42),
                                                     maxPanelPx)
+    // Smallest size the minutes line may shrink to before its unit is
+    // dropped (see the label in verticalComp)
+    readonly property int minMinutesPx: 7
 
     // In "all prayers" mode the next prayer carries its countdown underneath,
     // so it is the two-line case; the other prayers use a slightly smaller
@@ -156,22 +159,37 @@ MouseArea {
             }
 
             PlasmaComponents3.Label {
+                id: minutesLabel
                 Layout.alignment: Qt.AlignHCenter
                 // Minutes line under the icon, cut from the panel thickness
                 // like the horizontal sizes; HorizontalFit only steps in if
                 // the string is wider than the panel
                 Layout.preferredWidth: compact.panelThickness
+                Layout.maximumWidth: compact.panelThickness
                 Layout.preferredHeight: compact.verticalLinePx
                 horizontalAlignment: Text.AlignHCenter
                 verticalAlignment: Text.AlignVCenter
                 fontSizeMode: Text.HorizontalFit
-                minimumPixelSize: 6
+                minimumPixelSize: compact.minMinutesPx
                 visible: compact.ready && root.countdownMin !== ""
-                text: root.countdownMin
+                // The unit goes only when the whole string still fits the
+                // panel's width at the smallest size HorizontalFit may use;
+                // otherwise the bare minutes are shown rather than letting
+                // "540min" spill out of a thin panel
+                text: minutesFit.advanceWidth <= compact.panelThickness
+                      ? minutesFit.text
+                      : root.countdownMin
                 font.family: compact.appFont
                 font.pixelSize: compact.verticalLinePx
-                font.weight: Font.DemiBold
                 color: root.appTextColor
+
+                TextMetrics {
+                    id: minutesFit
+                    font.family: compact.appFont
+                    font.pixelSize: compact.minMinutesPx
+                    text: root.countdownMin
+                          + Mawaqit.uiString("m", Plasmoid.configuration.labelLanguage)
+                }
             }
         }
     }
