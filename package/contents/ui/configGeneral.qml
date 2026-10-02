@@ -13,14 +13,9 @@ KCM.SimpleKCM {
     /* ------------------- bound configuration keys ------------------- */
     property string cfg_mosqueSlug
     property string cfg_mosqueName
-    property string cfg_displayMode
     property string cfg_labelLanguage
     property alias cfg_use24h: use24hCheck.checked
     property alias cfg_showSunrise: sunriseCheck.checked
-    property alias cfg_showCountdownInPanel: countdownCheck.checked
-    property alias cfg_showHijriInPanel: hijriCheck.checked
-    property alias cfg_numericHijriInPanel: numericHijriCheck.checked
-    property alias cfg_usePrayerIconsInPanel: iconsCheck.checked
     property alias cfg_refreshDays: refreshSpin.value
 
     // Cache keys: declared so the dialog doesn't warn about unknown initial
@@ -444,9 +439,6 @@ KCM.SimpleKCM {
     Component.onDestruction: stopGps()
     Component.onCompleted: slugField.text = cfg_mosqueSlug
 
-    // Prayer names in the configured language, for the icon legend below
-    readonly property var prayerLabels: Mawaqit.prayerNames(page.cfg_labelLanguage)
-
     /* ============================= UI ================================ */
 
     ColumnLayout {
@@ -623,101 +615,6 @@ KCM.SimpleKCM {
             Kirigami.Separator {
                 Kirigami.FormData.isSection: true
                 Kirigami.FormData.label: i18n("Display")
-            }
-
-            // Only meaningful in a horizontal panel: it switches the inline
-            // panel strip between all prayers and the next one. The desktop
-            // widget always shows the full table and a vertical panel shows
-            // the next prayer's glyph, so the option is hidden in both.
-            ColumnLayout {
-                Kirigami.FormData.label: i18n("Panel shows:")
-                visible: Plasmoid.formFactor === PlasmaCore.Types.Horizontal
-                spacing: Kirigami.Units.smallSpacing
-
-                QQC2.RadioButton {
-                    text: i18n("All prayer times of the day")
-                    checked: page.cfg_displayMode === "full"
-                    onToggled: page.cfg_displayMode = "full"
-                }
-
-                QQC2.RadioButton {
-                    text: i18n("Only the next prayer")
-                    checked: page.cfg_displayMode === "next"
-                    onToggled: page.cfg_displayMode = "next"
-                }
-
-                // Kept self-descriptive rather than trimmed to "Hijri date":
-                // a screen reader announces the checkbox label on its own,
-                // without the group label above it
-                QQC2.CheckBox {
-                    id: hijriCheck
-                    Layout.topMargin: Kirigami.Units.smallSpacing
-                    text: i18n("Show Hijri date")
-                }
-
-                QQC2.CheckBox {
-                    id: numericHijriCheck
-                    Layout.leftMargin: Kirigami.Units.gridUnit
-                    enabled: hijriCheck.checked
-                    text: i18n("As digits (01/04/1448)")
-                }
-
-                QQC2.CheckBox {
-                    id: countdownCheck
-                    text: i18n("Show countdown")
-                }
-
-                QQC2.CheckBox {
-                    id: iconsCheck
-                    Layout.topMargin: Kirigami.Units.smallSpacing
-                    text: i18n("Use icons instead of prayer names")
-                }
-            }
-
-            // Legend for the prayer glyphs. In a horizontal panel it explains
-            // the option above, and is shown whether or not that option is on
-            // so the glyphs can be understood before committing to them. In a
-            // vertical panel the strip is always a glyph, so the legend stands
-            // on its own with no option attached. Mirrored for RTL
-            // prayer-name languages so the order matches the panel; the rest
-            // of the page keeps the system direction.
-            RowLayout {
-                visible: Plasmoid.formFactor === PlasmaCore.Types.Horizontal
-                         || Plasmoid.formFactor === PlasmaCore.Types.Vertical
-                LayoutMirroring.enabled: Mawaqit.isArabic(page.cfg_labelLanguage)
-                LayoutMirroring.childrenInherit: true
-                Layout.leftMargin: Kirigami.Units.gridUnit
-                Layout.bottomMargin: Kirigami.Units.smallSpacing
-                spacing: Kirigami.Units.largeSpacing
-
-                Repeater {
-                    model: ["fajr", "shuruq", "dhuhr",
-                            "asr", "maghrib", "isha"]
-
-                    delegate: ColumnLayout {
-                        id: legendCell
-                        required property string modelData
-                        required property int index
-                        spacing: 0
-
-                        Kirigami.Icon {
-                            Layout.alignment: Qt.AlignHCenter
-                            Layout.preferredWidth: Kirigami.Units.iconSizes.smallMedium
-                            Layout.preferredHeight: Kirigami.Units.iconSizes.smallMedium
-                            source: Qt.resolvedUrl("../icons/"
-                                                   + legendCell.modelData + ".svg")
-                            isMask: true
-                            color: Kirigami.Theme.textColor
-                        }
-
-                        QQC2.Label {
-                            Layout.alignment: Qt.AlignHCenter
-                            text: page.prayerLabels[legendCell.index]
-                            font: Kirigami.Theme.smallFont
-                            opacity: 0.75
-                        }
-                    }
-                }
             }
 
             QQC2.ComboBox {

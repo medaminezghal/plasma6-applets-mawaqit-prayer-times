@@ -25,6 +25,8 @@ PlasmoidItem {
     /* ----------------------- appearance (config) ----------------------- */
     // Resolved once here so the representations stay declarative and don't
     // each re-implement the "custom value or fall back to the theme" logic.
+    // The app* values style the expanded view (desktop widget or panel
+    // popup); the panel* values style the panel strip.
     readonly property string appFontFamily: Plasmoid.configuration.fontFamily !== ""
                                             ? Plasmoid.configuration.fontFamily
                                             : Kirigami.Theme.defaultFont.family
@@ -44,6 +46,36 @@ PlasmoidItem {
                                             Plasmoid.configuration.backgroundColor.b,
                                             Plasmoid.configuration.backgroundOpacity / 100)
     readonly property int appBackgroundRadius: Plasmoid.configuration.backgroundRadius
+
+    readonly property string panelFontFamily: Plasmoid.configuration.panelFontFamily !== ""
+                                              ? Plasmoid.configuration.panelFontFamily
+                                              : Kirigami.Theme.defaultFont.family
+    readonly property real panelScale: Plasmoid.configuration.panelScale
+    readonly property bool panelBoldNext: Plasmoid.configuration.panelBoldNextPrayer
+    readonly property color panelTextColor: Plasmoid.configuration.panelCustomTextColor
+                                            ? Plasmoid.configuration.panelTextColor
+                                            : Kirigami.Theme.textColor
+    readonly property color panelAccentColor: Plasmoid.configuration.panelCustomAccentColor
+                                              ? Plasmoid.configuration.panelAccentColor
+                                              : Kirigami.Theme.highlightColor
+
+    // Before the panel had its own appearance keys, the font, bold and
+    // color settings styled both the panel and the popup. Copy them into
+    // the panel keys once, so an update doesn't reset a customized panel
+    // to the theme.
+    function separatePanelAppearance() {
+        var c = Plasmoid.configuration;
+        if (c.panelAppearanceSeparated) {
+            return;
+        }
+        c.panelFontFamily = c.fontFamily;
+        c.panelBoldNextPrayer = c.boldNextPrayer;
+        c.panelCustomTextColor = c.customTextColor;
+        c.panelTextColor = c.textColor;
+        c.panelCustomAccentColor = c.customAccentColor;
+        c.panelAccentColor = c.accentColor;
+        c.panelAppearanceSeparated = true;
+    }
 
     property var calendar: null
     property var todayTimes: null      // [fajr, shuruq, dhuhr, asr, maghrib, isha]
@@ -351,6 +383,7 @@ PlasmoidItem {
     }
 
     Component.onCompleted: {
+        separatePanelAppearance();
         loadFromCache();
         // Force a fetch when the stored name is missing (e.g. clobbered by
         // the config dialog), so the real name appears without manual refresh
