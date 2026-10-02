@@ -440,8 +440,8 @@ Item {
                 text: root.next && root.next.tomorrow
                       ? root.nextName + " " + Mawaqit.uiString("tomorrow", Plasmoid.configuration.labelLanguage)
                         + " " + root.nextTimeFormatted + " — "
-                        + Mawaqit.inCountdown(root.countdown, Plasmoid.configuration.labelLanguage)
-                      : root.nextName + " " + Mawaqit.inCountdown(root.countdown, Plasmoid.configuration.labelLanguage)
+                        + Mawaqit.inCountdown(root.countdownFull, Plasmoid.configuration.labelLanguage)
+                      : root.nextName + " " + Mawaqit.inCountdown(root.countdownFull, Plasmoid.configuration.labelLanguage)
                 opacity: 0.7
                 font.family: root.appFontFamily
                 font.pointSize: Kirigami.Theme.smallFont.pointSize * root.appFontScale
