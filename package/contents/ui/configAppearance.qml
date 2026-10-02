@@ -18,8 +18,9 @@ KCM.SimpleKCM {
                                     || Plasmoid.formFactor === PlasmaCore.Types.Vertical
 
     /* ------------------- bound configuration keys ------------------- */
-    // fontFamily is set by the native font dialog below (family only); "" =
-    // system default.
+    // This page styles the expanded view: the desktop widget, or the popup
+    // of a panel widget. The panel strip has its own page (configPanel.qml).
+    // fontFamily is set by the font picker sheet below; "" = system default.
     property string cfg_fontFamily
     property alias cfg_fontScale: scaleSlider.value
     property alias cfg_boldNextPrayer: boldNextCheck.checked
@@ -36,85 +37,10 @@ KCM.SimpleKCM {
     property int cfg_backgroundOpacity
     property int cfg_backgroundRadius
 
-    /* ----------------------- font picker sheet ---------------------- *
-     * A fonts-only chooser. The native font dialog always shows style/size/
-     * effects/writing-system panels and can't be trimmed (QFontDialog exposes
-     * no option to hide them), so we list families ourselves. Enumeration is
-     * deferred to first open and pushed off the initial paint with
-     * Qt.callLater; a ListView is virtualized, so unlike the earlier ComboBox
-     * this doesn't stall plasmashell. */
-    Kirigami.OverlaySheet {
+    FontPickerSheet {
         id: fontSheet
-        title: i18n("Select font")
-
-        property var allFonts: []
-        property bool loaded: false
-        property bool loading: false
-
-        function load() {
-            if (loaded || loading) {
-                return;
-            }
-            loading = true;
-            // One tick later, so the sheet paints before the (fast, but not
-            // free) enumeration runs.
-            Qt.callLater(function () {
-                fontSheet.allFonts = Qt.fontFamilies();
-                fontSheet.loaded = true;
-                fontSheet.loading = false;
-            });
-        }
-
-        onOpened: {
-            fontSearch.text = "";
-            load();
-        }
-
-        header: Kirigami.SearchField {
-            id: fontSearch
-            placeholderText: i18n("Search fonts…")
-        }
-
-        ListView {
-            id: fontListView
-            implicitWidth: Kirigami.Units.gridUnit * 18
-            implicitHeight: Kirigami.Units.gridUnit * 20
-            clip: true
-
-            model: {
-                var q = fontSearch.text.toLowerCase();
-                if (q === "") {
-                    return fontSheet.allFonts;
-                }
-                return fontSheet.allFonts.filter(function (f) {
-                    return f.toLowerCase().indexOf(q) !== -1;
-                });
-            }
-
-            delegate: QQC2.ItemDelegate {
-                required property string modelData
-                width: ListView.view.width
-                text: modelData
-                highlighted: modelData === page.cfg_fontFamily
-                onClicked: {
-                    page.cfg_fontFamily = modelData;
-                    fontSheet.close();
-                }
-            }
-
-            QQC2.BusyIndicator {
-                anchors.centerIn: parent
-                running: fontSheet.loading
-                visible: running
-            }
-
-            Kirigami.PlaceholderMessage {
-                anchors.centerIn: parent
-                width: parent.width - Kirigami.Units.gridUnit * 4
-                visible: fontSheet.loaded && fontListView.count === 0
-                text: i18n("No fonts found")
-            }
-        }
+        selected: page.cfg_fontFamily
+        onPicked: (family) => page.cfg_fontFamily = family
     }
 
     /* ============================= UI ================================ */
@@ -127,9 +53,8 @@ KCM.SimpleKCM {
             Kirigami.FormData.label: i18n("Size")
         }
 
-        // The slider scales the expanded view only: the desktop widget, or
-        // the popup when the widget sits in a panel. Panel text follows the
-        // panel thickness instead, so name what actually changes.
+        // The expanded view only: the desktop widget, or the popup when the
+        // widget sits in a panel. The panel strip is sized on the Panel page.
         RowLayout {
             Kirigami.FormData.label: page.inPanel ? i18n("Popup size:") : i18n("Widget size:")
             Layout.fillWidth: true
@@ -138,7 +63,7 @@ KCM.SimpleKCM {
                 id: scaleSlider
                 Layout.fillWidth: true
                 Layout.preferredWidth: Kirigami.Units.gridUnit * 12
-                from: 0.7
+                from: 0.5
                 to: 2.0
                 stepSize: 0.05
             }
@@ -146,16 +71,6 @@ KCM.SimpleKCM {
                 text: i18n("%1%", Math.round(scaleSlider.value * 100))
                 Layout.minimumWidth: Kirigami.Units.gridUnit * 3
             }
-        }
-
-        QQC2.Label {
-            Layout.fillWidth: true
-            Layout.maximumWidth: Kirigami.Units.gridUnit * 22
-            visible: page.inPanel
-            text: i18n("Text in the panel itself follows the panel's thickness.")
-            font.pointSize: Kirigami.Theme.smallFont.pointSize
-            opacity: 0.7
-            wrapMode: Text.WordWrap
         }
 
         /* ------------------------- Fonts -------------------------- */
@@ -310,7 +225,9 @@ KCM.SimpleKCM {
         QQC2.Label {
             Layout.fillWidth: true
             Layout.maximumWidth: Kirigami.Units.gridUnit * 22
-            text: i18n("A custom background replaces the widget's theme frame. On the desktop and in the panel popup it is drawn behind the prayer times; the panel strip itself is left untouched.")
+            text: page.inPanel
+                  ? i18n("A custom background replaces the popup's theme frame, behind the prayer times. The popup keeps the theme's corner shape.")
+                  : i18n("A custom background replaces the widget's theme frame, behind the prayer times.")
             font.pointSize: Kirigami.Theme.smallFont.pointSize
             opacity: 0.7
             wrapMode: Text.WordWrap

@@ -65,7 +65,7 @@
             <default></default>
         </entry>
         <entry name="fontScale" type="Double">
-            <label>Multiplier applied to the default font sizes (1.0 = default)</label>
+            <label>Size of the desktop widget or panel popup, 0.5–2.0 (1.0 = default)</label>
             <default>1.0</default>
         </entry>
         <entry name="boldNextPrayer" type="Bool">
@@ -103,6 +103,41 @@
         <entry name="backgroundRadius" type="Int">
             <label>Custom background corner radius in pixels</label>
             <default>8</default>
+        </entry>
+
+        <!-- Panel appearance (the keys above style the desktop widget and
+             the panel popup) -->
+        <entry name="panelScale" type="Double">
+            <label>Size of the panel content relative to the panel thickness, 0.5–1.0</label>
+            <default>1.0</default>
+        </entry>
+        <entry name="panelFontFamily" type="String">
+            <label>Font family in the panel ("" = system default)</label>
+            <default></default>
+        </entry>
+        <entry name="panelBoldNextPrayer" type="Bool">
+            <label>Render the next prayer in bold when the panel shows all prayers</label>
+            <default>true</default>
+        </entry>
+        <entry name="panelCustomTextColor" type="Bool">
+            <label>Override the theme text color in the panel</label>
+            <default>false</default>
+        </entry>
+        <entry name="panelTextColor" type="Color">
+            <label>Custom panel text color (used only when panelCustomTextColor is true)</label>
+            <default>#eff0f1</default>
+        </entry>
+        <entry name="panelCustomAccentColor" type="Bool">
+            <label>Override the theme accent color for the next prayer in the panel</label>
+            <default>false</default>
+        </entry>
+        <entry name="panelAccentColor" type="Color">
+            <label>Custom panel accent color (used only when panelCustomAccentColor is true)</label>
+            <default>#3daee9</default>
+        </entry>
+        <entry name="panelAppearanceSeparated" type="Bool">
+            <label>One-time copy of the shared appearance into the panel keys is done</label>
+            <default>false</default>
         </entry>
 
         <!-- Refresh -->
