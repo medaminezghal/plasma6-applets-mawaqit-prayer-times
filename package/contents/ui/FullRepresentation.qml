@@ -21,8 +21,20 @@ Item {
     // table. displayMode only affects the inline panel strip.
     readonly property bool hasContent: root.configured && root.calendar !== null
     // Every spacing below is multiplied by the font-size slider too, so a
-    // bigger font grows the whole layout uniformly instead of only the text
-    readonly property real sp: root.appFontScale
+    // bigger font grows the whole layout uniformly instead of only the text.
+    // Animated, so applying a new size eases the layout into it instead of
+    // jumping; fitToContent() then eases the desktop container after it.
+    property real sp: root.appFontScale
+    Behavior on sp {
+        NumberAnimation {
+            id: scaleAnimation
+            duration: Kirigami.Units.longDuration
+            easing.type: Easing.InOutCubic
+            // The size is final now: fit the container straight away rather
+            // than after fitTimer's debounce
+            onRunningChanged: if (!running) full.fitToContent()
+        }
+    }
     readonly property real outerMargin: Math.round(Kirigami.Units.smallSpacing * 2 * sp)
 
     /* -------------------- font-driven metrics ------------------------ *
@@ -33,7 +45,7 @@ Item {
     FontMetrics {
         id: bodyMetrics
         font.family: root.appFontFamily
-        font.pointSize: Kirigami.Theme.defaultFont.pointSize * root.appFontScale
+        font.pointSize: Kirigami.Theme.defaultFont.pointSize * full.sp
     }
     readonly property real rowHeight: Math.round(bodyMetrics.height
                                                  + Kirigami.Units.smallSpacing * sp)
@@ -158,12 +170,50 @@ Item {
             return;
         }
 
-        // Free the cells, resize, then let the layout re-take them; the
-        // re-take is what flags the geometry as needing saving.
+        // Free the cells, ease the container to its new size, then let the
+        // layout re-take them (containerResize below); the re-take is what
+        // flags the geometry as needing saving. A resize still running is
+        // stopped first, which re-takes the cells at its current size.
+        if (containerResize.running) {
+            containerResize.stop();
+        }
         appletsLayout.releaseSpace(container);
-        container.width = wantWidth;
-        container.height = wantHeight;
-        appletsLayout.positionItem(container);
+        containerResize.container = container;
+        resizeWidth.to = wantWidth;
+        resizeHeight.to = wantHeight;
+        containerResize.start();
+    }
+
+    ParallelAnimation {
+        id: containerResize
+        property Item container: null
+
+        NumberAnimation {
+            id: resizeWidth
+            target: containerResize.container
+            property: "width"
+            duration: Kirigami.Units.longDuration
+            easing.type: Easing.InOutCubic
+        }
+        NumberAnimation {
+            id: resizeHeight
+            target: containerResize.container
+            property: "height"
+            duration: Kirigami.Units.longDuration
+            easing.type: Easing.InOutCubic
+        }
+
+        // Finished or stopped: re-take the cells at the size reached
+        onRunningChanged: {
+            if (running || container === null) {
+                return;
+            }
+            var item = container;
+            container = null;
+            if (item.layout) {
+                item.layout.positionItem(item);
+            }
+        }
     }
 
     Timer {
@@ -174,8 +224,18 @@ Item {
 
     Connections {
         target: contentColumn
-        function onImplicitWidthChanged() { fitTimer.restart(); }
-        function onImplicitHeightChanged() { fitTimer.restart(); }
+        // While the size animation runs, the content changes every frame;
+        // fitToContent() runs once when it ends instead
+        function onImplicitWidthChanged() {
+            if (!scaleAnimation.running) {
+                fitTimer.restart();
+            }
+        }
+        function onImplicitHeightChanged() {
+            if (!scaleAnimation.running) {
+                fitTimer.restart();
+            }
+        }
     }
 
     // Width: the widest row wins, with a 14-gridUnit floor (the original
@@ -343,7 +403,7 @@ Item {
             elide: Text.ElideRight
             horizontalAlignment: Text.AlignHCenter
             font.family: root.appFontFamily
-            font.pointSize: Kirigami.Theme.defaultFont.pointSize * 1.2 * root.appFontScale
+            font.pointSize: Kirigami.Theme.defaultFont.pointSize * 1.2 * full.sp
             color: root.appTextColor
         }
 
@@ -352,7 +412,7 @@ Item {
             horizontalAlignment: Text.AlignHCenter
             text: root.hijriDateText
             font.family: root.appFontFamily
-            font.pointSize: Kirigami.Theme.defaultFont.pointSize * root.appFontScale
+            font.pointSize: Kirigami.Theme.defaultFont.pointSize * full.sp
             font.weight: Font.DemiBold
             color: root.appTextColor
             opacity: 0.85
@@ -401,7 +461,7 @@ Item {
                         PlasmaComponents3.Label {
                             text: root.names[prayerRow.index]
                             font.family: root.appFontFamily
-                            font.pointSize: Kirigami.Theme.defaultFont.pointSize * root.appFontScale
+                            font.pointSize: Kirigami.Theme.defaultFont.pointSize * full.sp
                             font.weight: (prayerRow.isNext && root.appBoldNext) ? Font.Bold : Font.Normal
                             color: root.appTextColor
                             opacity: prayerRow.isSunrise ? 0.65 : 1
@@ -418,7 +478,7 @@ Item {
                                   ? Mawaqit.formatTime(root.todayTimes[prayerRow.index], root.use24h)
                                   : "—"
                             font.family: root.appFontFamily
-                            font.pointSize: Kirigami.Theme.defaultFont.pointSize * root.appFontScale
+                            font.pointSize: Kirigami.Theme.defaultFont.pointSize * full.sp
                             font.weight: (prayerRow.isNext && root.appBoldNext) ? Font.Bold : Font.Normal
                             color: root.appTextColor
                             opacity: prayerRow.isSunrise ? 0.65 : 1
@@ -444,7 +504,7 @@ Item {
                       : root.nextName + " " + Mawaqit.inCountdown(root.countdownFull, Plasmoid.configuration.labelLanguage)
                 opacity: 0.7
                 font.family: root.appFontFamily
-                font.pointSize: Kirigami.Theme.smallFont.pointSize * root.appFontScale
+                font.pointSize: Kirigami.Theme.smallFont.pointSize * full.sp
                 color: root.appTextColor
             }
         }
