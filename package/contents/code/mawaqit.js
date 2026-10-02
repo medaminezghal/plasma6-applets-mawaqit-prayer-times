@@ -519,6 +519,24 @@ function formatCountdownMin(ms) {
     return "" + Math.ceil(ms / 60000);
 }
 
+/**
+ * Full countdown for the expanded view, seconds always included:
+ * "7h 25m 30s" / "7\u0633 25\u062F 30\u062B"; "25m 30s" under an hour.
+ */
+function formatCountdownFull(ms, langSetting) {
+    if (ms < 0) ms = 0;
+    var totalSec = Math.floor(ms / 1000);
+    var h = Math.floor(totalSec / 3600);
+    var m = Math.floor((totalSec % 3600) / 60);
+    var s = totalSec % 60;
+    function pad(n) { return n < 10 ? "0" + n : "" + n; }
+    var U = { h: uiString("h", langSetting),
+              m: uiString("m", langSetting),
+              s: uiString("s", langSetting) };
+    if (h > 0) return h + U.h + " " + pad(m) + U.m + " " + pad(s) + U.s;
+    return m + U.m + " " + pad(s) + U.s;
+}
+
 function formatCountdown(ms, langSetting) {
     if (ms < 0) ms = 0;
     var totalSec = Math.floor(ms / 1000);

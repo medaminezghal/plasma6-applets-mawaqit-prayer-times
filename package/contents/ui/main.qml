@@ -49,6 +49,7 @@ PlasmoidItem {
     property var todayTimes: null      // [fajr, shuruq, dhuhr, asr, maghrib, isha]
     property var next: null            // {index, time, date, tomorrow, estimated?}
     property string countdown: ""
+    property string countdownFull: ""  // with seconds, for the expanded view
     property string countdownHM: ""
     property string countdownMin: ""
     property string hijriDateText: ""
@@ -288,6 +289,7 @@ PlasmoidItem {
         if (calendar === null) {
             next = null;
             countdown = "";
+            countdownFull = "";
             countdownHM = "";
             countdownMin = "";
             return;
@@ -297,6 +299,9 @@ PlasmoidItem {
         }
         countdown = next
             ? Mawaqit.formatCountdown(next.date - now, Plasmoid.configuration.labelLanguage)
+            : "";
+        countdownFull = next
+            ? Mawaqit.formatCountdownFull(next.date - now, Plasmoid.configuration.labelLanguage)
             : "";
         countdownHM = next ? Mawaqit.formatCountdownHM(next.date - now) : "";
         countdownMin = next ? Mawaqit.formatCountdownMin(next.date - now) : "";
