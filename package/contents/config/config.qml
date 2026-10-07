@@ -27,10 +27,4 @@ ConfigModel {
         icon: "preferences-desktop-color"
         source: "configAppearance.qml"
     }
-    // Installed vs. latest KDE Store version, and how to update
-    ConfigCategory {
-        name: i18n("Updates")
-        icon: "system-software-update"
-        source: "configUpdates.qml"
-    }
 }
