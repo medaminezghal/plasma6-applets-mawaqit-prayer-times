@@ -1,3 +1,4 @@
+import QtCore
 import QtQuick
 import QtQuick.Controls as QQC2
 import QtQuick.Layouts
@@ -436,13 +437,84 @@ KCM.SimpleKCM {
         });
     }
 
-    Component.onDestruction: stopGps()
-    Component.onCompleted: slugField.text = cfg_mosqueSlug
+    /* -------------------------- update check -------------------------- *
+     * Compares the installed version with the KDE Store's, only while this
+     * page is open. Silent unless a newer version exists: a failed check
+     * shows nothing. */
+
+    // Newer KDE Store version, or "" when up to date or unknown
+    property string newerVersion: ""
+    property var updateRequest: null
+    property int updateToken: 0
+
+    // A copy under the user's data directory (~/.local/share/plasma/
+    // plasmoids) came from the KDE Store or kpackagetool6; anything else
+    // (/usr/share/...) belongs to a system package.
+    readonly property bool localInstall: {
+        var dataDir = StandardPaths.writableLocation(StandardPaths.GenericDataLocation).toString();
+        return Qt.resolvedUrl(".").toString().indexOf(dataDir + "/plasma/plasmoids/") === 0;
+    }
+
+    function checkForUpdate() {
+        cancelUpdateCheck();
+        var token = updateToken;
+        var installed = Plasmoid.metaData.version;
+        updateRequest = Mawaqit.fetchStoreVersion(function (version) {
+            if (token !== page.updateToken) return;
+            updateWatchdog.stop();
+            page.updateRequest = null;
+            page.newerVersion = Mawaqit.compareVersions(version, installed) > 0 ? version : "";
+        }, function (message) {
+            if (token !== page.updateToken) return;
+            updateWatchdog.stop();
+            page.updateRequest = null;
+            console.log("[mawaqit] update check: " + message);
+        });
+        updateWatchdog.restart();
+    }
+
+    // Drop the outstanding request: its callback becomes a no-op
+    function cancelUpdateCheck() {
+        updateToken++;
+        updateWatchdog.stop();
+        if (updateRequest !== null) {
+            var request = updateRequest;
+            updateRequest = null;
+            request.abort();
+        }
+    }
+
+    Timer {
+        id: updateWatchdog
+        interval: 15000
+        onTriggered: page.cancelUpdateCheck()
+    }
+
+    Component.onDestruction: {
+        stopGps();
+        cancelUpdateCheck();
+    }
+    Component.onCompleted: {
+        slugField.text = cfg_mosqueSlug;
+        checkForUpdate();
+    }
 
     /* ============================= UI ================================ */
 
     ColumnLayout {
         spacing: Kirigami.Units.largeSpacing
+
+        // Only shown when the KDE Store has a newer version
+        QQC2.Label {
+            Layout.fillWidth: true
+            Layout.rightMargin: Kirigami.Units.gridUnit
+            visible: page.newerVersion !== ""
+            horizontalAlignment: Text.AlignHCenter
+            wrapMode: Text.WordWrap
+            text: page.localInstall
+                ? i18n("Version %1 is available. To update, open “Add Widgets…” → “Get New Widgets…” → “Download New Plasma Widgets”, set the filter to “Updateable” and update Mawaqit Prayer Times.", page.newerVersion)
+                : i18n("Version %1 is available. Update it with your system package manager; it may take some time to reach your package manager.", page.newerVersion)
+        }
 
         Kirigami.FormLayout {
             Layout.fillWidth: true
