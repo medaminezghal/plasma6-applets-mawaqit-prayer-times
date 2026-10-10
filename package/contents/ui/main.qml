@@ -3,6 +3,7 @@ import org.kde.plasma.plasmoid
 import org.kde.plasma.core as PlasmaCore
 import org.kde.kirigami as Kirigami
 import "../code/mawaqit.js" as Mawaqit
+import "../code/dial.js" as Dial
 
 PlasmoidItem {
     id: root
@@ -47,6 +48,20 @@ PlasmoidItem {
                                             Plasmoid.configuration.backgroundOpacity / 100)
     readonly property int appBackgroundRadius: Plasmoid.configuration.backgroundRadius
 
+    // Layout of the expanded view. Anything unknown (a value written by a
+    // newer version, say) falls back to the table, which every version has.
+    readonly property string appLayout: Plasmoid.configuration.layout === "sundial"
+                                        ? "sundial" : "classic"
+    // The Sky background is drawn from today's times, so until they are
+    // loaded the theme frame stays in place behind the busy indicator or
+    // the placeholder message.
+    readonly property bool appSkyBackground: appLayout === "sundial"
+                                             && Plasmoid.configuration.dialBackground === "sky"
+                                             && configured && calendar !== null
+    // Whether the expanded view paints its own background, in which case
+    // the theme frame is turned off underneath it
+    readonly property bool appPaintsBackground: appCustomBackground || appSkyBackground
+
     readonly property string panelFontFamily: Plasmoid.configuration.panelFontFamily !== ""
                                               ? Plasmoid.configuration.panelFontFamily
                                               : Kirigami.Theme.defaultFont.family
@@ -84,6 +99,7 @@ PlasmoidItem {
     property string countdownFull: ""  // with seconds, for the expanded view
     property string countdownHM: ""
     property string countdownMin: ""
+    property string countdownClock: "" // "hh:mm:ss", for the Sundial layout
     property string hijriDateText: ""
     property string hijriDateNumeric: ""
     property bool fetching: false
@@ -124,9 +140,10 @@ PlasmoidItem {
 
     Plasmoid.icon: Qt.resolvedUrl("../icons/mosque.svg").toString()
 
-    // When the user opts into a custom background, drop the theme frame so our
-    // own rounded rectangle is the only thing drawn behind the content.
-    Plasmoid.backgroundHints: appCustomBackground
+    // When the expanded view paints its own background (a custom one, or the
+    // Sundial's Sky), drop the theme frame so ours is the only thing drawn
+    // behind the content.
+    Plasmoid.backgroundHints: appPaintsBackground
                               ? PlasmaCore.Types.NoBackground
                               : (PlasmaCore.Types.DefaultBackground
                                  | PlasmaCore.Types.ConfigurableBackground)
@@ -324,6 +341,7 @@ PlasmoidItem {
             countdownFull = "";
             countdownHM = "";
             countdownMin = "";
+            countdownClock = "";
             return;
         }
         if (next === null || now >= next.date) {
@@ -337,6 +355,7 @@ PlasmoidItem {
             : "";
         countdownHM = next ? Mawaqit.formatCountdownHM(next.date - now) : "";
         countdownMin = next ? Mawaqit.formatCountdownMin(next.date - now) : "";
+        countdownClock = next ? Dial.formatCountdown(next.date - now) : "";
     }
 
     Timer {

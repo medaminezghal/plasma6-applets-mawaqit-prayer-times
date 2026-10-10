@@ -60,6 +60,14 @@
         </entry>
 
         <!-- Appearance -->
+        <entry name="layout" type="String">
+            <label>Layout of the desktop widget or panel popup: "classic" (table) or "sundial" (24-hour dial)</label>
+            <default>classic</default>
+        </entry>
+        <entry name="dialBackground" type="String">
+            <label>Background of the Sundial layout: "theme" or "sky" (drawn from today's times)</label>
+            <default>theme</default>
+        </entry>
         <entry name="fontFamily" type="String">
             <label>Font family for the prayer times ("" = system default)</label>
             <default></default>
