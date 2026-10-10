@@ -563,3 +563,56 @@ function normalizeSlug(text) {
     if (m) return m[1].toLowerCase();
     return text.trim().toLowerCase();
 }
+
+/* --------------------------- version check ---------------------------- *
+ * The KDE Store (OCS API) is the one place every release lands, so it is
+ * the only source checked; distro packages follow it with some delay. The
+ * store answers XML unless asked for JSON with format=json; the version is
+ * data[0].version.
+ * --------------------------------------------------------------------- */
+
+var STORE_ID = "2365203";
+var STORE_PAGE = "https://store.kde.org/p/" + STORE_ID;
+
+function fetchStoreVersion(onSuccess, onError) {
+    var xhr = new XMLHttpRequest();
+    xhr.open("GET", "https://api.kde-look.org/ocs/v1/content/data/" + STORE_ID
+             + "?format=json");
+    xhr.setRequestHeader("Accept", "application/json");
+    xhr.setRequestHeader("User-Agent", APP_USER_AGENT);
+    xhr.onreadystatechange = function () {
+        if (xhr.readyState !== XMLHttpRequest.DONE) return;
+        if (xhr.status !== 200) {
+            onError(xhr.status === 0 ? "could not reach the KDE Store"
+                                     : "HTTP " + xhr.status + " from the KDE Store");
+            return;
+        }
+        try {
+            var j = JSON.parse(xhr.responseText);
+            var item = (j.data && j.data.length > 0) ? j.data[0] : null;
+            var v = item && typeof item.version === "string" ? item.version.trim() : "";
+            if (v) onSuccess(v);
+            else onError("no version in the KDE Store response");
+        } catch (e) {
+            onError("unexpected response from the KDE Store");
+        }
+    };
+    xhr.send();
+    // Returned so the caller can abort it (no timeout property in QML's XHR)
+    return xhr;
+}
+
+/**
+ * Compare dotted numeric versions ("0.7.0", "0.10"); missing parts count
+ * as 0 and a non-numeric part as 0. Returns <0, 0 or >0 like a comparator.
+ */
+function compareVersions(a, b) {
+    var pa = String(a).replace(/^v/i, "").split(".");
+    var pb = String(b).replace(/^v/i, "").split(".");
+    for (var i = 0; i < Math.max(pa.length, pb.length); i++) {
+        var x = parseInt(pa[i], 10) || 0;
+        var y = parseInt(pb[i], 10) || 0;
+        if (x !== y) return x - y;
+    }
+    return 0;
+}

@@ -149,6 +149,8 @@ approximate city.
     nearby WiFi networks
   - Reverse geocoding: `nominatim.openstreetmap.org`
 - At runtime the widget contacts only `mawaqit.net`.
+- The **General** settings page asks the KDE Store (`api.kde-look.org`) for
+  the latest version, only while that page is open.
 
 ## License
 
