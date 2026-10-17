@@ -52,9 +52,43 @@ function cleanMosqueName(name) {
     return cut.length > 0 ? cut : name.trim();
 }
 
-function fetchConf(slug, onSuccess, onError) {
+/* -------------------------- mosque page ------------------------------ *
+ * A mosque has two public pages carrying the same confData: the regular
+ * one, /<lang>/<slug>, and /<lang>/id/<number>, which is the link the
+ * Mawaqit app shares. The configured mosque (mosqueSlug) holds either a
+ * slug or "id/<number>"; mosqueId() tells them apart and fetchConf()
+ * picks the matching fetch.
+ * --------------------------------------------------------------------- */
+
+/** The mosque's number when mosque is "id/<number>", otherwise "". */
+function mosqueId(mosque) {
+    var m = /^id\/(\d+)$/.exec(mosque);
+    return m ? m[1] : "";
+}
+
+function fetchConf(mosque, onSuccess, onError) {
+    var id = mosqueId(mosque);
+    return id !== "" ? fetchConfById(id, onSuccess, onError)
+                     : fetchConfBySlug(mosque, onSuccess, onError);
+}
+
+function fetchConfBySlug(slug, onSuccess, onError) {
+    return requestConf("/fr/" + encodeURIComponent(slug), slug,
+                       "Mosque “" + slug + "” not found on mawaqit.net",
+                       onSuccess, onError);
+}
+
+function fetchConfById(id, onSuccess, onError) {
+    return requestConf("/fr/id/" + id, id,
+                       "No mosque with ID " + id + " on mawaqit.net",
+                       onSuccess, onError);
+}
+
+/* fallbackName is the name used when the page has none; notFound is the
+ * message for a 404. */
+function requestConf(path, fallbackName, notFound, onSuccess, onError) {
     var xhr = new XMLHttpRequest();
-    xhr.open("GET", BASE + "/fr/" + encodeURIComponent(slug));
+    xhr.open("GET", BASE + path);
     xhr.onreadystatechange = function () {
         if (xhr.readyState !== XMLHttpRequest.DONE) return;
         if (xhr.status === 200) {
@@ -67,7 +101,7 @@ function fetchConf(slug, onSuccess, onError) {
                 var conf = JSON.parse(raw);
                 onSuccess({
                     name: cleanMosqueName(conf.name || conf.label
-                                          || extractTitle(xhr.responseText) || slug),
+                                          || extractTitle(xhr.responseText) || fallbackName),
                     calendar: conf.calendar || null,
                     iqamaCalendar: conf.iqamaCalendar || null,
                     times: conf.times || null,
@@ -81,7 +115,7 @@ function fetchConf(slug, onSuccess, onError) {
                 onError("Failed to parse confData JSON: " + e);
             }
         } else if (xhr.status === 404) {
-            onError("Mosque \u201C" + slug + "\u201D not found on mawaqit.net");
+            onError(notFound);
         } else if (xhr.status === 0) {
             // No HTTP status: the connection failed, or abort() was called
             // (QQmlXMLHttpRequest::abort dispatches the callback with the
@@ -399,16 +433,20 @@ function formatCountdown(ms, langSetting) {
 }
 
 /**
- * Accept a full mawaqit.net URL or bare slug; return the slug. Besides the
- * regular page (/fr/<slug>), Mawaqit serves the same mosque at
- * /fr/m/<slug> (mobile view, redirects to the regular page) and
- * /fr/w/<slug> (widget page); skip that segment so a link copied from a
- * phone or a mosque's website resolves too.
+ * Turn what was pasted in the settings - a mawaqit.net URL, or a bare
+ * slug - into the configured mosque: "id/<number>" for a link shared from
+ * the Mawaqit app (mawaqit.net/<lang>/id/<number>), the slug otherwise.
+ * Only a URL is parsed, not text around it. Besides the regular page
+ * (/<lang>/<slug>), Mawaqit serves the same mosque at /<lang>/m/<slug>
+ * (mobile view, redirects to the regular page) and /<lang>/w/<slug>
+ * (widget page); skip that segment so a link copied from a phone or a
+ * mosque's website resolves too.
  */
-function normalizeSlug(text) {
-    var m = text.match(/mawaqit\.net\/(?:[a-z]{2}\/)?(?:[mw]\/)?([A-Za-z0-9][A-Za-z0-9\-]*)/);
-    if (m) return m[1].toLowerCase();
-    return text.trim().toLowerCase();
+function normalizeMosque(text) {
+    var t = text.trim();
+    var m = /^(?:https?:\/\/)?(?:www\.)?mawaqit\.net\/(?:[a-z]{2}\/)?(?:id\/(\d+)|(?:[mw]\/)?([A-Za-z0-9][A-Za-z0-9\-]*))(?:[\/?#].*)?$/i.exec(t);
+    if (m) return m[1] ? "id/" + m[1] : m[2].toLowerCase();
+    return t.toLowerCase();
 }
 
 /* --------------------------- version check ---------------------------- *

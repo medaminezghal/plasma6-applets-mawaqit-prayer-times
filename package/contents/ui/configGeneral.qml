@@ -40,7 +40,7 @@ KCM.SimpleKCM {
         var live = Plasmoid.configuration;
         // Normally done when the field loses focus; repeated here in case
         // the dialog is confirmed without that happening
-        cfg_mosqueSlug = Mawaqit.normalizeSlug(cfg_mosqueSlug);
+        cfg_mosqueSlug = Mawaqit.normalizeMosque(cfg_mosqueSlug);
         var switching = cfg_mosqueSlug !== live.mosqueSlug;
         // A slug confirmed before its check finished leaves the previous
         // mosque's name behind; the widget fetches the real one
@@ -90,7 +90,7 @@ KCM.SimpleKCM {
     /* ------------------------- mosque page -------------------------- */
 
     function applySlugInput() {
-        var normalized = Mawaqit.normalizeSlug(slugField.text);
+        var normalized = Mawaqit.normalizeMosque(slugField.text);
         if (normalized !== slugField.text) {
             slugField.text = normalized;
         }
@@ -209,10 +209,10 @@ KCM.SimpleKCM {
 
             QQC2.TextField {
                 id: slugField
-                Kirigami.FormData.label: i18n("Mosque page or slug:")
+                Kirigami.FormData.label: i18n("Mosque link:")
                 Layout.fillWidth: true
                 Layout.maximumWidth: Kirigami.Units.gridUnit * 18
-                placeholderText: i18n("Paste mawaqit.net URL or slug…")
+                placeholderText: i18n("Paste your mosque's mawaqit.net link…")
                 // Dirty the config on every keystroke so Apply enables
                 // immediately; normalization and verification wait for
                 // Enter or focus leaving the field
@@ -240,7 +240,7 @@ KCM.SimpleKCM {
             QQC2.Label {
                 Layout.fillWidth: true
                 Layout.maximumWidth: Kirigami.Units.gridUnit * 22
-                text: i18n("Paste your mosque's mawaqit.net address, e.g. mawaqit.net/fr/your-mosque")
+                text: i18n("In the Mawaqit app, open your mosque, tap Share and paste only the link from the message, e.g. https://mawaqit.net/ar/id/12345. A mosque page address such as mawaqit.net/fr/your-mosque, or its last part, works too.")
                 font.pointSize: Kirigami.Theme.smallFont.pointSize
                 opacity: 0.7
                 wrapMode: Text.WordWrap

@@ -7,7 +7,7 @@
     <group name="General">
         <!-- Mosque identity -->
         <entry name="mosqueSlug" type="String">
-            <label>Mawaqit mosque slug (last part of the mawaqit.net URL)</label>
+            <label>Mawaqit mosque: its slug (last part of the mosque page URL), or "id/NUMBER" from a link shared by the Mawaqit app</label>
             <default></default>
         </entry>
         <entry name="mosqueName" type="String">
