@@ -334,12 +334,20 @@ function prayerNames(langSetting) {
     return PRAYER_NAMES[lang];
 }
 
+/* A calendar day is [fajr, shuruq, dhuhr, asr, maghrib, isha], except at
+ * mosques that display Imsak (displayingSabahImsak), whose days carry it
+ * first: [imsak, fajr, shuruq, dhuhr, asr, maghrib, isha]. The widget
+ * doesn't show Imsak, so drop it. The length is checked per day rather
+ * than through the mosque setting, since a mosque can limit Imsak to a
+ * date range (sabahImsakStartDate/EndDate). */
 function timesForDate(calendar, date) {
     if (!calendar || calendar.length !== 12) return null;
     var month = calendar[date.getMonth()];
     if (!month) return null;
     var day = month[String(date.getDate())];
-    return (day && day.length >= 6) ? day : null;
+    if (!day) return null;
+    if (day.length === 7) return day.slice(1);
+    return day.length === 6 ? day : null;
 }
 
 function parseHM(hm, baseDate) {
