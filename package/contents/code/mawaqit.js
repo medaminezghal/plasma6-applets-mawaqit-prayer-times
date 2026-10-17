@@ -97,159 +97,6 @@ function fetchConf(slug, onSuccess, onError) {
     return xhr;
 }
 
-/* --------------------------- mosque search ---------------------------- *
- * Mawaqit's public JSON endpoint api/2.0/mosque/search takes either a
- * keyword (word=) or coordinates (lat=&lon=, ordered by proximity) and
- * returns SEARCH_PAGE_SIZE results per page, with page=1 the first; a page
- * past the end returns an empty array. The old fallback that scraped
- * /en/search was dropped: that page now answers 404, so it only turned an
- * outage into a misleading "not found".
- * --------------------------------------------------------------------- */
-
-var SEARCH_PAGE_SIZE = 10;
-
-/**
- * query  "word=..." or "lat=...&lon=..." (already URL-encoded)
- * page   1-based page number
- */
-function searchPage(query, page, onSuccess, onError) {
-    var xhr = new XMLHttpRequest();
-    xhr.open("GET", BASE + "/api/2.0/mosque/search?" + query + "&page=" + (page || 1));
-    xhr.setRequestHeader("Accept", "application/json");
-    xhr.onreadystatechange = function () {
-        if (xhr.readyState !== XMLHttpRequest.DONE) return;
-        if (xhr.status === 0) {
-            onError("could not reach mawaqit.net");
-            return;
-        }
-        if (xhr.status !== 200) {
-            console.log("[mawaqit] search HTTP " + xhr.status);
-            onError("HTTP " + xhr.status + " from mawaqit.net");
-            return;
-        }
-        try {
-            var arr = JSON.parse(xhr.responseText);
-            if (!Array.isArray(arr)) {
-                onError("unexpected response from mawaqit.net");
-                return;
-            }
-            var results = [];
-            for (var i = 0; i < arr.length; i++) {
-                var it = arr[i];
-                if (!it.slug) continue;
-                var label = it.label || it.name || it.slug;
-                if (it.localisation && label.indexOf(it.localisation) === -1) {
-                    label += " \u2014 " + it.localisation;
-                }
-                results.push({ slug: it.slug, label: label });
-            }
-            onSuccess(results);
-        } catch (e) {
-            onError("unexpected response from mawaqit.net");
-        }
-    };
-    xhr.send();
-}
-
-function wordQuery(word) {
-    return "word=" + encodeURIComponent(word);
-}
-
-function coordsQuery(lat, lon) {
-    return "lat=" + lat + "&lon=" + lon;
-}
-
-/* ------------------------------ location ------------------------------ */
-
-/* QML's XMLHttpRequest sends "User-Agent: Mozilla/5.0" unless told
- * otherwise. Nominatim's usage policy requires an agent that identifies
- * the application and answers 403 to that one, and ipapi.co answers a
- * browser-like agent with a Cloudflare challenge (403) - so reverse
- * geocoding never worked and the second IP provider rarely did. Every
- * location service accepts this one; mawaqit.net requests are left as
- * they were. */
-var APP_USER_AGENT = "plasma6-applets-mawaqit-prayer-times "
-                   + "(+https://github.com/medaminezghal/plasma6-applets-mawaqit-prayer-times)";
-
-var IP_PROVIDERS = [
-    {
-        url: "https://ipwho.is/",
-        parse: function (j) {
-            return (j.success !== false && j.city)
-                ? { lat: j.latitude, lon: j.longitude, city: j.city } : null;
-        }
-    },
-    {
-        url: "https://ipapi.co/json/",
-        parse: function (j) {
-            return j.city ? { lat: j.latitude, lon: j.longitude, city: j.city } : null;
-        }
-    },
-    {
-        url: "http://ip-api.com/json",
-        parse: function (j) {
-            return (j.status === "success")
-                ? { lat: j.lat, lon: j.lon, city: j.city } : null;
-        }
-    }
-];
-
-function ipLocate(onSuccess, onError, _index) {
-    var index = _index || 0;
-    if (index >= IP_PROVIDERS.length) {
-        onError("all IP geolocation providers failed");
-        return;
-    }
-    var provider = IP_PROVIDERS[index];
-    var xhr = new XMLHttpRequest();
-    xhr.open("GET", provider.url);
-    xhr.setRequestHeader("Accept", "application/json");
-    xhr.setRequestHeader("User-Agent", APP_USER_AGENT);
-    xhr.onreadystatechange = function () {
-        if (xhr.readyState !== XMLHttpRequest.DONE) return;
-        var next = function () { ipLocate(onSuccess, onError, index + 1); };
-        if (xhr.status !== 200) {
-            console.log("[mawaqit] ip provider " + provider.url + " HTTP " + xhr.status);
-            next();
-            return;
-        }
-        try {
-            var loc = provider.parse(JSON.parse(xhr.responseText));
-            if (loc) onSuccess(loc);
-            else next();
-        } catch (e) {
-            console.log("[mawaqit] ip provider " + provider.url + " parse error");
-            next();
-        }
-    };
-    xhr.send();
-}
-
-function reverseGeocode(lat, lon, onSuccess, onError) {
-    var xhr = new XMLHttpRequest();
-    xhr.open("GET", "https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=10&lat="
-             + lat + "&lon=" + lon);
-    xhr.setRequestHeader("Accept", "application/json");
-    xhr.setRequestHeader("User-Agent", APP_USER_AGENT);
-    xhr.onreadystatechange = function () {
-        if (xhr.readyState !== XMLHttpRequest.DONE) return;
-        if (xhr.status !== 200) {
-            onError("Reverse geocoding failed (HTTP " + xhr.status + ")");
-            return;
-        }
-        try {
-            var j = JSON.parse(xhr.responseText);
-            var a = j.address || {};
-            var city = a.city || a.town || a.village || a.municipality || a.county || j.name;
-            if (city) onSuccess(city);
-            else onError("No city in reverse geocoding result");
-        } catch (e) {
-            onError("Reverse geocoding parse error: " + e);
-        }
-    };
-    xhr.send();
-}
-
 /* --------------------------- hijri calendar --------------------------- *
  * Mawaqit renders its own hijri date with the Kuwaiti arithmetic
  * algorithm: a 30-year cycle of 10631 days with mean 29.5-day months, so
@@ -573,6 +420,12 @@ function normalizeSlug(text) {
 
 var STORE_ID = "2365203";
 var STORE_PAGE = "https://store.kde.org/p/" + STORE_ID;
+
+/* QML's XMLHttpRequest sends "User-Agent: Mozilla/5.0" unless told
+ * otherwise; name the application instead. mawaqit.net requests are left
+ * as they were. */
+var APP_USER_AGENT = "plasma6-applets-mawaqit-prayer-times "
+                   + "(+https://github.com/medaminezghal/plasma6-applets-mawaqit-prayer-times)";
 
 function fetchStoreVersion(onSuccess, onError) {
     var xhr = new XMLHttpRequest();
