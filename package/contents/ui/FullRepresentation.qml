@@ -17,9 +17,14 @@ Item {
     LayoutMirroring.enabled: root.rtl
     LayoutMirroring.childrenInherit: true
 
-    // The expanded view (desktop body and panel popup) always shows the full
-    // table. displayMode only affects the inline panel strip.
+    // The expanded view (desktop body and panel popup) shows the layout
+    // picked on the Appearance/Popup page; displayMode only affects the
+    // inline panel strip.
     readonly property bool hasContent: root.configured && root.calendar !== null
+    readonly property bool sundial: root.appLayout === "sundial"
+    // Text over the Sky background is white unless the user chose a colour
+    readonly property color inkColor: root.appSkyBackground && !Plasmoid.configuration.customTextColor
+                                      ? "#ffffff" : root.appTextColor
     // Every spacing below is multiplied by the font-size slider too, so a
     // bigger font grows the whole layout uniformly instead of only the text.
     // Animated, so applying a new size eases the layout into it instead of
@@ -107,7 +112,7 @@ Item {
                                         : Kirigami.Units.cornerRadius
 
     // Padding the applet container stops adding once we turn its frame off
-    readonly property real framePad: (root.appCustomBackground && onDesktop) ? 1 : 0
+    readonly property real framePad: (root.appPaintsBackground && onDesktop) ? 1 : 0
     readonly property real padLeft: outerMargin + framePad * frameMetrics.fixedMargins.left
     readonly property real padRight: outerMargin + framePad * frameMetrics.fixedMargins.right
     readonly property real padTop: outerMargin + framePad * frameMetrics.fixedMargins.top
@@ -259,9 +264,29 @@ Item {
      * painted card lands exactly where the theme frame was. */
     Rectangle {
         anchors.fill: parent
-        visible: root.appCustomBackground
+        visible: root.appCustomBackground && !root.appSkyBackground
         color: root.appBackgroundColor
         radius: full.inPopup ? full.popupRadius : root.appBackgroundRadius
+        anchors.leftMargin: full.inPopup ? frameMetrics.bleed("left")
+                                         : frameMetrics.shadow("left")
+        anchors.rightMargin: full.inPopup ? frameMetrics.bleed("right")
+                                          : frameMetrics.shadow("right")
+        anchors.topMargin: full.inPopup ? frameMetrics.bleed("top")
+                                        : frameMetrics.shadow("top")
+        anchors.bottomMargin: full.inPopup ? frameMetrics.bleed("bottom")
+                                           : frameMetrics.shadow("bottom")
+    }
+
+    // The Sundial's Sky takes the custom background's place, same shape
+    SkyBackground {
+        id: skyBackground
+        anchors.fill: parent
+        visible: root.appSkyBackground
+        times: root.todayTimes
+        radius: full.inPopup ? full.popupRadius : root.appBackgroundRadius
+        // The dial's centre, in our own coordinates
+        centreX: contentColumn.x + body.x + body.width / 2 - x
+        centreY: contentColumn.y + body.y + body.height / 2 - y
         anchors.leftMargin: full.inPopup ? frameMetrics.bleed("left")
                                          : frameMetrics.shadow("left")
         anchors.rightMargin: full.inPopup ? frameMetrics.bleed("right")
@@ -313,7 +338,7 @@ Item {
     function updatePopupFrame() {
         var frame = popupFrameItem();
         if (frame) {
-            frame.visible = !root.appCustomBackground;
+            frame.visible = !root.appPaintsBackground;
         }
     }
 
@@ -329,8 +354,8 @@ Item {
     }
 
     Connections {
-        target: Plasmoid.configuration
-        function onCustomBackgroundChanged() {
+        target: root
+        function onAppPaintsBackgroundChanged() {
             full.updatePopupFrame();
         }
     }
@@ -404,7 +429,7 @@ Item {
             horizontalAlignment: Text.AlignHCenter
             font.family: root.appFontFamily
             font.pointSize: Kirigami.Theme.defaultFont.pointSize * 1.2 * full.sp
-            color: root.appTextColor
+            color: full.inkColor
         }
 
         PlasmaComponents3.Label {
@@ -414,7 +439,7 @@ Item {
             font.family: root.appFontFamily
             font.pointSize: Kirigami.Theme.defaultFont.pointSize * full.sp
             font.weight: Font.DemiBold
-            color: root.appTextColor
+            color: full.inkColor
             opacity: 0.85
         }
 
@@ -424,88 +449,136 @@ Item {
             Layout.bottomMargin: Kirigami.Units.smallSpacing * full.sp
         }
 
-        /* ---------- Full times table ---------- */
-        ColumnLayout {
+        /* ------------------------- Body ------------------------- *
+         * The Classic table always lays itself out, even when the Sundial
+         * is shown, and its size is the body's size. So the widget and the
+         * popup keep exactly the same size whichever layout or background
+         * is picked; the Sundial fills that space. Opacity 0, not visible:
+         * false, so the table keeps taking part in the size calculation. */
+        Item {
+            id: body
             Layout.fillWidth: true
-            spacing: 0
+            implicitWidth: classicTable.implicitWidth
+            implicitHeight: classicTable.implicitHeight
 
-            Repeater {
-                model: 6
+            ColumnLayout {
+                id: classicTable
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.top: parent.top
+                spacing: 0
+                opacity: full.sundial ? 0 : 1
+                enabled: !full.sundial
 
-                delegate: Rectangle {
-                    id: prayerRow
-                    required property int index
+                Repeater {
+                    model: 6
 
-                    readonly property bool isSunrise: index === 1
-                    readonly property bool isNext: root.next !== null
-                                                   && root.next.index === index
-                                                   && !root.next.tomorrow
+                    delegate: Rectangle {
+                        id: prayerRow
+                        required property int index
 
-                    visible: !isSunrise || Plasmoid.configuration.showSunrise
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: full.rowHeight
-                    // Sets the widget width: name + gap + time, never elided
-                    implicitWidth: rowContent.implicitWidth
-                                   + Kirigami.Units.smallSpacing * 4 * full.sp
-                    radius: Kirigami.Units.cornerRadius
-                    color: isNext
-                           ? Qt.alpha(root.appAccentColor, 0.25)
-                           : "transparent"
+                        readonly property bool isSunrise: index === 1
+                        readonly property bool isNext: root.next !== null
+                                                       && root.next.index === index
+                                                       && !root.next.tomorrow
 
-                    RowLayout {
-                        id: rowContent
-                        anchors.fill: parent
-                        anchors.leftMargin: Kirigami.Units.smallSpacing * 2 * full.sp
-                        anchors.rightMargin: Kirigami.Units.smallSpacing * 2 * full.sp
+                        visible: !isSunrise || Plasmoid.configuration.showSunrise
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: full.rowHeight
+                        // Sets the widget width: name + gap + time, never elided
+                        implicitWidth: rowContent.implicitWidth
+                                       + Kirigami.Units.smallSpacing * 4 * full.sp
+                        radius: Kirigami.Units.cornerRadius
+                        color: isNext
+                               ? Qt.alpha(root.appAccentColor, 0.25)
+                               : "transparent"
 
-                        PlasmaComponents3.Label {
-                            text: root.names[prayerRow.index]
-                            font.family: root.appFontFamily
-                            font.pointSize: Kirigami.Theme.defaultFont.pointSize * full.sp
-                            font.weight: (prayerRow.isNext && root.appBoldNext) ? Font.Bold : Font.Normal
-                            color: root.appTextColor
-                            opacity: prayerRow.isSunrise ? 0.65 : 1
-                        }
+                        RowLayout {
+                            id: rowContent
+                            anchors.fill: parent
+                            anchors.leftMargin: Kirigami.Units.smallSpacing * 2 * full.sp
+                            anchors.rightMargin: Kirigami.Units.smallSpacing * 2 * full.sp
 
-                        Item {
-                            Layout.fillWidth: true
-                            // Smallest gap allowed between name and time
-                            Layout.preferredWidth: Kirigami.Units.gridUnit * full.sp
-                        }
+                            PlasmaComponents3.Label {
+                                text: root.names[prayerRow.index]
+                                font.family: root.appFontFamily
+                                font.pointSize: Kirigami.Theme.defaultFont.pointSize * full.sp
+                                font.weight: (prayerRow.isNext && root.appBoldNext) ? Font.Bold : Font.Normal
+                                color: root.appTextColor
+                                opacity: prayerRow.isSunrise ? 0.65 : 1
+                            }
 
-                        PlasmaComponents3.Label {
-                            text: root.todayTimes
-                                  ? Mawaqit.formatTime(root.todayTimes[prayerRow.index], root.use24h)
-                                  : "—"
-                            font.family: root.appFontFamily
-                            font.pointSize: Kirigami.Theme.defaultFont.pointSize * full.sp
-                            font.weight: (prayerRow.isNext && root.appBoldNext) ? Font.Bold : Font.Normal
-                            color: root.appTextColor
-                            opacity: prayerRow.isSunrise ? 0.65 : 1
+                            Item {
+                                Layout.fillWidth: true
+                                // Smallest gap allowed between name and time
+                                Layout.preferredWidth: Kirigami.Units.gridUnit * full.sp
+                            }
+
+                            PlasmaComponents3.Label {
+                                text: root.todayTimes
+                                      ? Mawaqit.formatTime(root.todayTimes[prayerRow.index], root.use24h)
+                                      : "—"
+                                font.family: root.appFontFamily
+                                font.pointSize: Kirigami.Theme.defaultFont.pointSize * full.sp
+                                font.weight: (prayerRow.isNext && root.appBoldNext) ? Font.Bold : Font.Normal
+                                color: root.appTextColor
+                                opacity: prayerRow.isSunrise ? 0.65 : 1
+                            }
                         }
                     }
                 }
+
+                Kirigami.Separator {
+                    Layout.fillWidth: true
+                    Layout.topMargin: Kirigami.Units.smallSpacing * full.sp
+                }
+
+                PlasmaComponents3.Label {
+                    Layout.fillWidth: true
+                    Layout.topMargin: Kirigami.Units.smallSpacing * full.sp
+                    horizontalAlignment: Text.AlignHCenter
+                    visible: root.next !== null
+                    text: root.next && root.next.tomorrow
+                          ? root.nextName + " " + Mawaqit.uiString("tomorrow", Plasmoid.configuration.labelLanguage)
+                            + " " + root.nextTimeFormatted + " — "
+                            + Mawaqit.inCountdown(root.countdownFull, Plasmoid.configuration.labelLanguage)
+                          : root.nextName + " " + Mawaqit.inCountdown(root.countdownFull, Plasmoid.configuration.labelLanguage)
+                    opacity: 0.7
+                    font.family: root.appFontFamily
+                    font.pointSize: Kirigami.Theme.smallFont.pointSize * full.sp
+                    color: root.appTextColor
+                }
             }
 
-            Kirigami.Separator {
-                Layout.fillWidth: true
-                Layout.topMargin: Kirigami.Units.smallSpacing * full.sp
-            }
+            SundialView {
+                anchors.fill: parent
+                visible: full.sundial
 
-            PlasmaComponents3.Label {
-                Layout.fillWidth: true
-                Layout.topMargin: Kirigami.Units.smallSpacing * full.sp
-                horizontalAlignment: Text.AlignHCenter
-                visible: root.next !== null
-                text: root.next && root.next.tomorrow
-                      ? root.nextName + " " + Mawaqit.uiString("tomorrow", Plasmoid.configuration.labelLanguage)
-                        + " " + root.nextTimeFormatted + " — "
-                        + Mawaqit.inCountdown(root.countdownFull, Plasmoid.configuration.labelLanguage)
-                      : root.nextName + " " + Mawaqit.inCountdown(root.countdownFull, Plasmoid.configuration.labelLanguage)
-                opacity: 0.7
-                font.family: root.appFontFamily
-                font.pointSize: Kirigami.Theme.smallFont.pointSize * full.sp
-                color: root.appTextColor
+                times: root.todayTimes
+                names: root.names
+                timeLabels: {
+                    var out = [];
+                    if (root.todayTimes) {
+                        for (var i = 0; i < 6; ++i) {
+                            out.push(Mawaqit.formatTime(root.todayTimes[i], root.use24h));
+                        }
+                    }
+                    return out;
+                }
+                // On the dial the day wraps round, so after Isha tomorrow's
+                // Fajr is marked too: it is the next point the countdown runs to
+                nextIndex: root.next !== null ? root.next.index : -1
+                countdownText: root.countdownClock
+                showSunrise: Plasmoid.configuration.showSunrise
+                boldNext: root.appBoldNext
+                sky: root.appSkyBackground
+
+                fontFamily: root.appFontFamily
+                pointSize: Kirigami.Theme.defaultFont.pointSize * full.sp
+                sizeScale: full.sp
+                cornerRadius: Kirigami.Units.cornerRadius
+                textColor: full.inkColor
+                accentColor: root.appAccentColor
             }
         }
     }

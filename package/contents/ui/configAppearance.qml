@@ -37,6 +37,13 @@ KCM.SimpleKCM {
     property int cfg_backgroundOpacity
     property int cfg_backgroundRadius
 
+    // Layout of the expanded view, and the Sundial's background
+    property string cfg_layout
+    property string cfg_dialBackground
+    readonly property bool sundial: cfg_layout === "sundial"
+    // The Sky replaces the custom background in the Sundial layout
+    readonly property bool skyShown: sundial && cfg_dialBackground === "sky"
+
     FontPickerSheet {
         id: fontSheet
         selected: page.cfg_fontFamily
@@ -46,6 +53,62 @@ KCM.SimpleKCM {
     /* ============================= UI ================================ */
     Kirigami.FormLayout {
         Layout.fillWidth: true
+
+        /* ------------------------- Layout ------------------------- */
+        Kirigami.Separator {
+            Kirigami.FormData.isSection: true
+            Kirigami.FormData.label: i18n("Layout")
+        }
+
+        // Radio buttons write the key directly, like "Panel shows:" on the
+        // Panel page. Anything other than "sundial" reads as Classic, the
+        // same fallback main.qml uses.
+        ColumnLayout {
+            Kirigami.FormData.label: i18n("Layout:")
+            spacing: Kirigami.Units.smallSpacing
+
+            QQC2.RadioButton {
+                text: i18n("Classic")
+                checked: !page.sundial
+                onToggled: page.cfg_layout = "classic"
+            }
+
+            QQC2.RadioButton {
+                text: i18n("Sundial")
+                checked: page.sundial
+                onToggled: page.cfg_layout = "sundial"
+            }
+        }
+
+        ColumnLayout {
+            Kirigami.FormData.label: i18n("Sundial background:")
+            visible: page.sundial
+            spacing: Kirigami.Units.smallSpacing
+
+            QQC2.RadioButton {
+                text: i18n("Theme")
+                checked: page.cfg_dialBackground !== "sky"
+                onToggled: page.cfg_dialBackground = "theme"
+            }
+
+            QQC2.RadioButton {
+                text: i18n("Sky")
+                checked: page.cfg_dialBackground === "sky"
+                onToggled: page.cfg_dialBackground = "sky"
+            }
+        }
+
+        QQC2.Label {
+            Layout.fillWidth: true
+            Layout.maximumWidth: Kirigami.Units.gridUnit * 22
+            visible: page.sundial
+            text: page.skyShown
+                  ? i18n("The sky is drawn from today's prayer times: day from sunrise to maghrib, night from isha to fajr, and the twilights between them.")
+                  : i18n("Uses the theme's background, or the custom background below.")
+            font.pointSize: Kirigami.Theme.smallFont.pointSize
+            opacity: 0.7
+            wrapMode: Text.WordWrap
+        }
 
         /* -------------------------- Size -------------------------- */
         Kirigami.Separator {
@@ -169,19 +232,20 @@ KCM.SimpleKCM {
         QQC2.CheckBox {
             id: customBgCheck
             Kirigami.FormData.label: i18n("Background:")
+            enabled: !page.skyShown
             text: i18n("Use a custom background")
         }
 
         KQControls.ColorButton {
             id: bgColorButton
             Kirigami.FormData.label: i18n("Color:")
-            enabled: customBgCheck.checked
+            enabled: customBgCheck.checked && !page.skyShown
             showAlphaChannel: false
         }
 
         RowLayout {
             Kirigami.FormData.label: i18n("Opacity:")
-            enabled: customBgCheck.checked
+            enabled: customBgCheck.checked && !page.skyShown
             Layout.fillWidth: true
 
             QQC2.Slider {
@@ -202,7 +266,8 @@ KCM.SimpleKCM {
 
         RowLayout {
             Kirigami.FormData.label: i18n("Corner radius:")
-            enabled: customBgCheck.checked
+            // The Sky is cut to this radius too
+            enabled: customBgCheck.checked || page.skyShown
             visible: !page.inPanel
             Layout.fillWidth: true
 
@@ -225,7 +290,9 @@ KCM.SimpleKCM {
         QQC2.Label {
             Layout.fillWidth: true
             Layout.maximumWidth: Kirigami.Units.gridUnit * 22
-            text: page.inPanel
+            text: page.skyShown
+                  ? i18n("The Sundial's Sky background is in use; the custom background applies again with the Classic layout or the Theme background.")
+                  : page.inPanel
                   ? i18n("A custom background replaces the popup's theme frame, behind the prayer times. The popup keeps the theme's corner shape.")
                   : i18n("A custom background replaces the widget's theme frame, behind the prayer times.")
             font.pointSize: Kirigami.Theme.smallFont.pointSize
