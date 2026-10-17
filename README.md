@@ -34,8 +34,9 @@ exact timetable your mosque publishes on [mawaqit.net](https://mawaqit.net)
   with adjustable color, opacity, and corner radius — every option is opt-in
   and falls back to your Plasma theme. "Show the next prayer in bold" needs a
   font that has a bold style; with fonts that don't, it has no effect
-- **Set up from your mosque's link**: paste your mosque's mawaqit.net
-  address in the settings (see [Choosing your mosque](#choosing-your-mosque))
+- **Set up from your mosque's link**: paste the link the Mawaqit app shares
+  for your mosque, or its mawaqit.net address, in the settings (see
+  [Choosing your mosque](#choosing-your-mosque))
 - **Offline-first**: the entire year's calendar is cached locally after a
   single download — the widget keeps working with no network, and
   re-downloads only every few days to pick up schedule corrections
@@ -73,11 +74,15 @@ right-click → **Refresh prayer times**.
 
 ## Choosing your mosque
 
-Open the widget's settings and paste your mosque's mawaqit.net address
-(for example `https://mawaqit.net/fr/your-mosque`) in **Mosque page or
-slug**. The last part of the address, the mosque's slug, works too. The
-widget checks the page right away and shows the mosque's name, so you know
-you picked the right one.
+1. In the Mawaqit app, search for your mosque, open it and tap **Share**.
+2. The shared message contains a link like `https://mawaqit.net/ar/id/12345`.
+   Copy **only that link**, not the whole message.
+3. Open the widget's settings and paste it in **Mosque link**.
+
+The address of the mosque's page on mawaqit.net (for example
+`https://mawaqit.net/fr/your-mosque`) works too, and so does its last part,
+the mosque's slug. The widget checks the link right away and shows the
+mosque's name, so you know you picked the right one.
 
 The settings used to search Mawaqit for mosques and detect your location.
 Since 6 October 2026 Mawaqit's search API requires an account token, and
