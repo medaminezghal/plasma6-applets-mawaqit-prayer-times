@@ -61,15 +61,15 @@ KCM.SimpleKCM {
         }
 
         // Radio buttons write the key directly, like "Panel shows:" on the
-        // Panel page. Anything other than "sundial" reads as Classic, the
-        // same fallback main.qml uses.
+        // Panel page. Anything other than "sundial" or "cards" reads as
+        // Classic, the same fallback main.qml uses.
         ColumnLayout {
             Kirigami.FormData.label: i18n("Layout:")
             spacing: Kirigami.Units.smallSpacing
 
             QQC2.RadioButton {
                 text: i18n("Classic")
-                checked: !page.sundial
+                checked: !page.sundial && page.cfg_layout !== "cards"
                 onToggled: page.cfg_layout = "classic"
             }
 
@@ -77,6 +77,12 @@ KCM.SimpleKCM {
                 text: i18n("Sundial")
                 checked: page.sundial
                 onToggled: page.cfg_layout = "sundial"
+            }
+
+            QQC2.RadioButton {
+                text: i18n("Cards")
+                checked: page.cfg_layout === "cards"
+                onToggled: page.cfg_layout = "cards"
             }
         }
 

@@ -51,7 +51,8 @@ PlasmoidItem {
     // Layout of the expanded view. Anything unknown (a value written by a
     // newer version, say) falls back to the table, which every version has.
     readonly property string appLayout: Plasmoid.configuration.layout === "sundial"
-                                        ? "sundial" : "classic"
+                                        || Plasmoid.configuration.layout === "cards"
+                                        ? Plasmoid.configuration.layout : "classic"
     // The Sky background is drawn from today's times, so until they are
     // loaded the theme frame stays in place behind the busy indicator or
     // the placeholder message.
@@ -99,7 +100,8 @@ PlasmoidItem {
     property string countdownFull: ""  // with seconds, for the expanded view
     property string countdownHM: ""
     property string countdownMin: ""
-    property string countdownClock: "" // "hh:mm:ss", for the Sundial layout
+    property string countdownClock: "" // "hh:mm:ss", for the Sundial and Cards layouts
+    property real nextProgress: 0      // 0..1 of the way from the previous prayer to the next
     property string hijriDateText: ""
     property string hijriDateNumeric: ""
     property bool fetching: false
@@ -342,6 +344,7 @@ PlasmoidItem {
             countdownHM = "";
             countdownMin = "";
             countdownClock = "";
+            nextProgress = 0;
             return;
         }
         if (next === null || now >= next.date) {
@@ -356,6 +359,10 @@ PlasmoidItem {
         countdownHM = next ? Mawaqit.formatCountdownHM(next.date - now) : "";
         countdownMin = next ? Mawaqit.formatCountdownMin(next.date - now) : "";
         countdownClock = next ? Dial.formatCountdown(next.date - now) : "";
+        var since = Mawaqit.previousPrayerDate(calendar, next, now);
+        nextProgress = since && next && next.date > since
+            ? Math.max(0, Math.min(1, (now - since) / (next.date - since)))
+            : 0;
     }
 
     Timer {

@@ -379,6 +379,30 @@ function nextPrayer(calendar, now) {
     return { index: 0, time: tTimes[0], date: parseHM(tTimes[0], tmrw), tomorrow: true };
 }
 
+/**
+ * Start of the stretch that `next` (from nextPrayer) ends: the prayer just
+ * before it, skipping sunrise like nextPrayer does. Before Fajr that is
+ * yesterday's Isha, after Isha it is today's. Returns a Date, or null.
+ */
+function previousPrayerDate(calendar, next, now) {
+    if (!next) return null;
+    var today = timesForDate(calendar, now);
+    if (!today) return null;
+    if (next.tomorrow) {
+        return parseHM(today[5], now);
+    }
+    var order = [0, 2, 3, 4, 5];
+    var at = order.indexOf(next.index);
+    if (at > 0) {
+        return parseHM(today[order[at - 1]], now);
+    }
+    // Before Fajr. On January 1st the calendar has no last year's December,
+    // so this year's December 31st stands in for it - a minute or two off
+    var yday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+    var yTimes = timesForDate(calendar, yday);
+    return parseHM((yTimes || today)[5], yday);
+}
+
 function formatTime(hm, use24h) {
     if (use24h) return hm;
     var parts = hm.split(":");
