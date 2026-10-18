@@ -26,6 +26,7 @@ Item {
     readonly property bool cardsLayout: root.appLayout === "cards"
     readonly property bool horizonLayout: root.appLayout === "horizon"
     readonly property bool kaabaLayout: root.appLayout === "kaaba"
+    readonly property bool qalamLayout: root.appLayout === "qalam"
 
     /* The Horizon layout's sky at this minute, shared by its background and the
      * text over it. Minutes are fine enough: the colours and the sun move
@@ -38,7 +39,7 @@ Item {
     Timer {
         interval: 30000
         // The Kaaba layout uses the minute too, to tell which prayers are done
-        running: (full.horizonLayout || full.kaabaLayout) && full.visible
+        running: (full.horizonLayout || full.kaabaLayout || full.qalamLayout) && full.visible
         repeat: true
         triggeredOnStart: true
         onTriggered: full.nowMinutes = full.minutesNow()
@@ -51,12 +52,35 @@ Item {
         return d > 0 ? d : 1;
     }
 
+    // The Qalam's paper turns dark from a little after Maghrib until a
+    // little before sunrise
+    readonly property bool qalamNight: root.todayTimes
+                                       ? (nowMinutes < Horizon.toMinutes(root.todayTimes[1]) - 15
+                                          || nowMinutes > Horizon.toMinutes(root.todayTimes[4]) + 20)
+                                       : false
+    // Its names are written in a calligraphic hand when one is installed,
+    // for Arabic names; otherwise in the widget's font
+    readonly property string calligraphyFamily: {
+        if (!root.rtl) {
+            return "";
+        }
+        var have = Qt.fontFamilies();
+        var wanted = ["Aref Ruqaa", "Amiri", "Scheherazade New", "Noto Naskh Arabic"];
+        for (var i = 0; i < wanted.length; ++i) {
+            if (have.indexOf(wanted[i]) >= 0) {
+                return wanted[i];
+            }
+        }
+        return "";
+    }
+
     // Text over the Sky background is white unless the user chose a colour;
     // over the Horizon layout it is dark navy while the sky behind it is bright
     readonly property color inkColor: Plasmoid.configuration.customTextColor
                                       ? root.appTextColor
                                       : root.appSkyBackground ? "#ffffff"
                                       : root.appKaabaScene ? "#d8cdb2"
+                                      : root.appQalamScene ? (qalamNight ? "#f2e6ce" : "#24190e")
                                       : horizonSky ? skyInk(horizonSky.top)
                                       : root.appTextColor
     function skyInk(color) {
@@ -302,7 +326,7 @@ Item {
     Rectangle {
         anchors.fill: parent
         visible: root.appCustomBackground && !root.appSkyBackground && !root.appHorizonScene
-                 && !root.appKaabaScene
+                 && !root.appKaabaScene && !root.appQalamScene
         color: root.appBackgroundColor
         radius: full.inPopup ? full.popupRadius : root.appBackgroundRadius
         anchors.leftMargin: full.inPopup ? frameMetrics.bleed("left")
@@ -348,6 +372,23 @@ Item {
         // Where the cards start and the countdown ends, in our coordinates
         horizonY: contentColumn.y + body.y + horizonView.y + horizonView.horizonY - y
         textBottom: contentColumn.y + body.y + horizonView.y + horizonView.textBottom - y
+        anchors.leftMargin: full.inPopup ? frameMetrics.bleed("left")
+                                         : frameMetrics.shadow("left")
+        anchors.rightMargin: full.inPopup ? frameMetrics.bleed("right")
+                                          : frameMetrics.shadow("right")
+        anchors.topMargin: full.inPopup ? frameMetrics.bleed("top")
+                                        : frameMetrics.shadow("top")
+        anchors.bottomMargin: full.inPopup ? frameMetrics.bleed("bottom")
+                                           : frameMetrics.shadow("bottom")
+    }
+
+    // The Qalam's sheet of paper with its ruled frame
+    QalamBackground {
+        anchors.fill: parent
+        visible: root.appQalamScene
+        night: full.qalamNight
+        radius: full.inPopup ? full.popupRadius : root.appBackgroundRadius
+        sizeScale: full.sp
         anchors.leftMargin: full.inPopup ? frameMetrics.bleed("left")
                                          : frameMetrics.shadow("left")
         anchors.rightMargin: full.inPopup ? frameMetrics.bleed("right")
@@ -529,7 +570,8 @@ Item {
             Layout.bottomMargin: Kirigami.Units.smallSpacing * full.sp
             // The Kaaba layout's gold belt runs right under it; hidden, not
             // removed, so the size stays the same in every layout
-            opacity: full.kaabaLayout ? 0 : 1
+            // the Qalam draws its own ornament there
+            opacity: full.kaabaLayout || full.qalamLayout ? 0 : 1
         }
 
         /* ------------------------- Body ------------------------- *
@@ -551,8 +593,10 @@ Item {
                 anchors.right: parent.right
                 anchors.top: parent.top
                 spacing: 0
-                opacity: full.sundial || full.cardsLayout || full.horizonLayout || full.kaabaLayout ? 0 : 1
+                opacity: full.sundial || full.cardsLayout || full.horizonLayout || full.kaabaLayout
+                         || full.qalamLayout ? 0 : 1
                 enabled: !full.sundial && !full.cardsLayout && !full.horizonLayout && !full.kaabaLayout
+                         && !full.qalamLayout
 
                 Repeater {
                     model: 6
@@ -694,6 +738,35 @@ Item {
                 cornerRadius: Kirigami.Units.cornerRadius
                 textColor: root.appTextColor
                 accentColor: root.appAccentColor
+            }
+
+            QalamView {
+                anchors.fill: parent
+                visible: full.qalamLayout
+
+                times: root.todayTimes
+                minutes: full.nowMinutes
+                names: root.names
+                timeLabels: {
+                    var out = [];
+                    if (root.todayTimes) {
+                        for (var i = 0; i < 6; ++i) {
+                            out.push(Mawaqit.formatTime(root.todayTimes[i], root.use24h));
+                        }
+                    }
+                    return out;
+                }
+                nextIndex: root.next !== null ? root.next.index : -1
+                nextIsTomorrow: root.next !== null && root.next.tomorrow === true
+                countdownText: root.countdownClock
+                progress: root.nextProgress
+                boldNext: root.appBoldNext
+                night: full.qalamNight
+
+                fontFamily: root.appFontFamily
+                nameFamily: full.calligraphyFamily
+                pointSize: Kirigami.Theme.defaultFont.pointSize * full.sp
+                sizeScale: full.sp
             }
 
             KaabaView {

@@ -61,7 +61,7 @@
 
         <!-- Appearance -->
         <entry name="layout" type="String">
-            <label>Layout of the desktop widget or panel popup: "classic" (table), "sundial" (24-hour dial), "cards" (prayer cards under a countdown gauge), "horizon" (the sky over a mosque) or "kaaba" (the Kaaba's black cloth and gold belt)</label>
+            <label>Layout of the desktop widget or panel popup: "classic" (table), "sundial" (24-hour dial), "cards" (prayer cards under a countdown gauge), "horizon" (the sky over a mosque), "kaaba" (the Kaaba's black cloth and gold belt) or "qalam" (the names written in ink)</label>
             <default>classic</default>
         </entry>
         <entry name="horizonMosque" type="String">
