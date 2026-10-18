@@ -50,7 +50,7 @@ PlasmoidItem {
 
     // Layout of the expanded view. Anything unknown (a value written by a
     // newer version, say) falls back to the table, which every version has.
-    readonly property string appLayout: ["sundial", "cards", "horizon", "kaaba"]
+    readonly property string appLayout: ["sundial", "cards", "horizon", "kaaba", "qalam"]
                                         .indexOf(Plasmoid.configuration.layout) >= 0
                                         ? Plasmoid.configuration.layout : "classic"
     // The Sky background is drawn from today's times, so until they are
@@ -69,10 +69,14 @@ PlasmoidItem {
     // The Kaaba layout is its own background too, its black cloth
     readonly property bool appKaabaScene: appLayout === "kaaba"
                                           && configured && calendar !== null
+    // And the Qalam layout, its sheet of paper
+    readonly property bool appQalamScene: appLayout === "qalam"
+                                          && configured && calendar !== null
     // Whether the expanded view paints its own background, in which case
     // the theme frame is turned off underneath it
     readonly property bool appPaintsBackground: appCustomBackground || appSkyBackground
                                                 || appHorizonScene || appKaabaScene
+                                                || appQalamScene
 
     readonly property string panelFontFamily: Plasmoid.configuration.panelFontFamily !== ""
                                               ? Plasmoid.configuration.panelFontFamily
