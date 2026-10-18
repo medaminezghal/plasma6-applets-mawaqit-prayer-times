@@ -22,6 +22,7 @@ Item {
     // inline panel strip.
     readonly property bool hasContent: root.configured && root.calendar !== null
     readonly property bool sundial: root.appLayout === "sundial"
+    readonly property bool cardsLayout: root.appLayout === "cards"
     // Text over the Sky background is white unless the user chose a colour
     readonly property color inkColor: root.appSkyBackground && !Plasmoid.configuration.customTextColor
                                       ? "#ffffff" : root.appTextColor
@@ -450,11 +451,12 @@ Item {
         }
 
         /* ------------------------- Body ------------------------- *
-         * The Classic table always lays itself out, even when the Sundial
-         * is shown, and its size is the body's size. So the widget and the
-         * popup keep exactly the same size whichever layout or background
-         * is picked; the Sundial fills that space. Opacity 0, not visible:
-         * false, so the table keeps taking part in the size calculation. */
+         * The Classic table always lays itself out, even when another
+         * layout is shown, and its size is the body's size. So the widget
+         * and the popup keep exactly the same size whichever layout or
+         * background is picked; the Sundial or the Cards fill that space.
+         * Opacity 0, not visible: false, so the table keeps taking part in
+         * the size calculation. */
         Item {
             id: body
             Layout.fillWidth: true
@@ -467,8 +469,8 @@ Item {
                 anchors.right: parent.right
                 anchors.top: parent.top
                 spacing: 0
-                opacity: full.sundial ? 0 : 1
-                enabled: !full.sundial
+                opacity: (full.sundial || full.cardsLayout) ? 0 : 1
+                enabled: !full.sundial && !full.cardsLayout
 
                 Repeater {
                     model: 6
@@ -578,6 +580,37 @@ Item {
                 sizeScale: full.sp
                 cornerRadius: Kirigami.Units.cornerRadius
                 textColor: full.inkColor
+                accentColor: root.appAccentColor
+            }
+
+            CardsView {
+                anchors.fill: parent
+                visible: full.cardsLayout
+
+                times: root.todayTimes
+                names: root.names
+                timeLabels: {
+                    var out = [];
+                    if (root.todayTimes) {
+                        for (var i = 0; i < 6; ++i) {
+                            out.push(Mawaqit.formatTime(root.todayTimes[i], root.use24h));
+                        }
+                    }
+                    return out;
+                }
+                // After Isha the countdown runs to tomorrow's Fajr, so that
+                // card is the one marked
+                nextIndex: root.next !== null ? root.next.index : -1
+                countdownText: root.countdownClock
+                progress: root.nextProgress
+                showSunrise: Plasmoid.configuration.showSunrise
+                boldNext: root.appBoldNext
+
+                fontFamily: root.appFontFamily
+                pointSize: Kirigami.Theme.defaultFont.pointSize * full.sp
+                sizeScale: full.sp
+                cornerRadius: Kirigami.Units.cornerRadius
+                textColor: root.appTextColor
                 accentColor: root.appAccentColor
             }
         }

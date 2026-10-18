@@ -61,7 +61,7 @@
 
         <!-- Appearance -->
         <entry name="layout" type="String">
-            <label>Layout of the desktop widget or panel popup: "classic" (table) or "sundial" (24-hour dial)</label>
+            <label>Layout of the desktop widget or panel popup: "classic" (table), "sundial" (24-hour dial) or "cards" (prayer cards under a countdown gauge)</label>
             <default>classic</default>
         </entry>
         <entry name="dialBackground" type="String">
