@@ -45,8 +45,9 @@ KCM.SimpleKCM {
     // The Sky replaces the custom background in the Sundial layout
     readonly property bool skyShown: sundial && cfg_dialBackground === "sky"
     readonly property bool horizon: cfg_layout === "horizon"
+    readonly property bool kaaba: cfg_layout === "kaaba"
     // Layouts that paint their own background, so the custom one is unused
-    readonly property bool ownBackground: skyShown || horizon
+    readonly property bool ownBackground: skyShown || horizon || kaaba
 
     FontPickerSheet {
         id: fontSheet
@@ -65,15 +66,15 @@ KCM.SimpleKCM {
         }
 
         // Radio buttons write the key directly, like "Panel shows:" on the
-        // Panel page. Anything other than "sundial", "cards" or "horizon"
-        // reads as Classic, the same fallback main.qml uses.
+        // Panel page. Anything other than "sundial", "cards", "horizon" or
+        // "kaaba" reads as Classic, the same fallback main.qml uses.
         ColumnLayout {
             Kirigami.FormData.label: i18n("Layout:")
             spacing: Kirigami.Units.smallSpacing
 
             QQC2.RadioButton {
                 text: i18n("Classic")
-                checked: !page.sundial && page.cfg_layout !== "cards" && !page.horizon
+                checked: !page.sundial && page.cfg_layout !== "cards" && !page.horizon && !page.kaaba
                 onToggled: page.cfg_layout = "classic"
             }
 
@@ -93,6 +94,12 @@ KCM.SimpleKCM {
                 text: i18n("Horizon")
                 checked: page.horizon
                 onToggled: page.cfg_layout = "horizon"
+            }
+
+            QQC2.RadioButton {
+                text: i18n("Kaaba")
+                checked: page.kaaba
+                onToggled: page.cfg_layout = "kaaba"
             }
         }
 
@@ -121,6 +128,16 @@ KCM.SimpleKCM {
             Layout.maximumWidth: Kirigami.Units.gridUnit * 22
             visible: page.horizon
             text: i18n("The sky over the mosque through the day, following today's prayer times, with the sun and the moon where they stand. The moon's phase follows the hijri date.")
+            font.pointSize: Kirigami.Theme.smallFont.pointSize
+            opacity: 0.7
+            wrapMode: Text.WordWrap
+        }
+
+        QQC2.Label {
+            Layout.fillWidth: true
+            Layout.maximumWidth: Kirigami.Units.gridUnit * 22
+            visible: page.kaaba
+            text: i18n("The black cloth of the Kaaba with its gold belt, one cartouche per prayer. The prayers already prayed today are embroidered in gold, and the next one is stitched as its time approaches.")
             font.pointSize: Kirigami.Theme.smallFont.pointSize
             opacity: 0.7
             wrapMode: Text.WordWrap
@@ -312,7 +329,8 @@ KCM.SimpleKCM {
 
         RowLayout {
             Kirigami.FormData.label: i18n("Corner radius:")
-            // The Sky and the Horizon layout are cut to this radius too
+            // The Sky and the Horizon and Kaaba layouts are cut to this
+            // radius too
             enabled: customBgCheck.checked || page.ownBackground
             visible: !page.inPanel
             Layout.fillWidth: true
@@ -338,6 +356,8 @@ KCM.SimpleKCM {
             Layout.maximumWidth: Kirigami.Units.gridUnit * 22
             text: page.horizon
                   ? i18n("The Horizon layout draws its own sky; the custom background applies again with another layout.")
+                  : page.kaaba
+                  ? i18n("The Kaaba layout draws its own cloth; the custom background applies again with another layout.")
                   : page.skyShown
                   ? i18n("The Sundial's Sky background is in use; the custom background applies again with the Classic layout or the Theme background.")
                   : page.inPanel

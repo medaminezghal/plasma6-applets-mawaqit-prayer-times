@@ -25,6 +25,7 @@ Item {
     readonly property bool sundial: root.appLayout === "sundial"
     readonly property bool cardsLayout: root.appLayout === "cards"
     readonly property bool horizonLayout: root.appLayout === "horizon"
+    readonly property bool kaabaLayout: root.appLayout === "kaaba"
 
     /* The Horizon layout's sky at this minute, shared by its background and the
      * text over it. Minutes are fine enough: the colours and the sun move
@@ -36,7 +37,8 @@ Item {
     }
     Timer {
         interval: 30000
-        running: full.horizonLayout && full.visible
+        // The Kaaba layout uses the minute too, to tell which prayers are done
+        running: (full.horizonLayout || full.kaabaLayout) && full.visible
         repeat: true
         triggeredOnStart: true
         onTriggered: full.nowMinutes = full.minutesNow()
@@ -54,6 +56,7 @@ Item {
     readonly property color inkColor: Plasmoid.configuration.customTextColor
                                       ? root.appTextColor
                                       : root.appSkyBackground ? "#ffffff"
+                                      : root.appKaabaScene ? "#d8cdb2"
                                       : horizonSky ? skyInk(horizonSky.top)
                                       : root.appTextColor
     function skyInk(color) {
@@ -299,6 +302,7 @@ Item {
     Rectangle {
         anchors.fill: parent
         visible: root.appCustomBackground && !root.appSkyBackground && !root.appHorizonScene
+                 && !root.appKaabaScene
         color: root.appBackgroundColor
         radius: full.inPopup ? full.popupRadius : root.appBackgroundRadius
         anchors.leftMargin: full.inPopup ? frameMetrics.bleed("left")
@@ -344,6 +348,25 @@ Item {
         // Where the cards start and the countdown ends, in our coordinates
         horizonY: contentColumn.y + body.y + horizonView.y + horizonView.horizonY - y
         textBottom: contentColumn.y + body.y + horizonView.y + horizonView.textBottom - y
+        anchors.leftMargin: full.inPopup ? frameMetrics.bleed("left")
+                                         : frameMetrics.shadow("left")
+        anchors.rightMargin: full.inPopup ? frameMetrics.bleed("right")
+                                          : frameMetrics.shadow("right")
+        anchors.topMargin: full.inPopup ? frameMetrics.bleed("top")
+                                        : frameMetrics.shadow("top")
+        anchors.bottomMargin: full.inPopup ? frameMetrics.bleed("bottom")
+                                           : frameMetrics.shadow("bottom")
+    }
+
+    // The Kaaba's black cloth, with its belt across the widget
+    KaabaBackground {
+        anchors.fill: parent
+        visible: root.appKaabaScene
+        radius: full.inPopup ? full.popupRadius : root.appBackgroundRadius
+        sizeScale: full.sp
+        // Where the belt runs, in our coordinates
+        bandTop: contentColumn.y + body.y + kaabaView.y + kaabaView.bandTop - y
+        bandBottom: contentColumn.y + body.y + kaabaView.y + kaabaView.bandBottom - y
         anchors.leftMargin: full.inPopup ? frameMetrics.bleed("left")
                                          : frameMetrics.shadow("left")
         anchors.rightMargin: full.inPopup ? frameMetrics.bleed("right")
@@ -504,6 +527,9 @@ Item {
             Layout.fillWidth: true
             Layout.topMargin: Kirigami.Units.smallSpacing * full.sp
             Layout.bottomMargin: Kirigami.Units.smallSpacing * full.sp
+            // The Kaaba layout's gold belt runs right under it; hidden, not
+            // removed, so the size stays the same in every layout
+            opacity: full.kaabaLayout ? 0 : 1
         }
 
         /* ------------------------- Body ------------------------- *
@@ -525,8 +551,8 @@ Item {
                 anchors.right: parent.right
                 anchors.top: parent.top
                 spacing: 0
-                opacity: (full.sundial || full.cardsLayout || full.horizonLayout) ? 0 : 1
-                enabled: !full.sundial && !full.cardsLayout && !full.horizonLayout
+                opacity: full.sundial || full.cardsLayout || full.horizonLayout || full.kaabaLayout ? 0 : 1
+                enabled: !full.sundial && !full.cardsLayout && !full.horizonLayout && !full.kaabaLayout
 
                 Repeater {
                     model: 6
@@ -668,6 +694,35 @@ Item {
                 cornerRadius: Kirigami.Units.cornerRadius
                 textColor: root.appTextColor
                 accentColor: root.appAccentColor
+            }
+
+            KaabaView {
+                id: kaabaView
+                anchors.fill: parent
+                visible: full.kaabaLayout
+
+                times: root.todayTimes
+                minutes: full.nowMinutes
+                names: root.names
+                timeLabels: {
+                    var out = [];
+                    if (root.todayTimes) {
+                        for (var i = 0; i < 6; ++i) {
+                            out.push(Mawaqit.formatTime(root.todayTimes[i], root.use24h));
+                        }
+                    }
+                    return out;
+                }
+                nextIndex: root.next !== null ? root.next.index : -1
+                nextIsTomorrow: root.next !== null && root.next.tomorrow === true
+                countdownText: root.countdownClock
+                progress: root.nextProgress
+                boldNext: root.appBoldNext
+
+                fontFamily: root.appFontFamily
+                pointSize: Kirigami.Theme.defaultFont.pointSize * full.sp
+                sizeScale: full.sp
+                labelColor: full.inkColor
             }
 
             HorizonView {
