@@ -58,6 +58,44 @@ exact timetable your mosque publishes on [mawaqit.net](https://mawaqit.net)
   system language
 - 12/24-hour format, optional sunrise (Shuruq) row
 
+## Gallery
+
+All shown in Arabic with a dark Plasma theme, at 18:20 with Isha next.
+
+### Desktop widget and popup layouts
+
+<table>
+  <tr>
+    <td align="center"><img src="assets/screenshots/layout-classic.png" width="200" alt="Classic layout"><br>Classic</td>
+    <td align="center"><img src="assets/screenshots/layout-sundial.png" width="200" alt="Sundial layout on the theme background"><br>Sundial</td>
+    <td align="center"><img src="assets/screenshots/layout-sundial-sky.png" width="186" alt="Sundial layout on the Sky background"><br>Sundial, Sky background</td>
+    <td align="center"><img src="assets/screenshots/layout-cards.png" width="200" alt="Cards layout"><br>Cards</td>
+  </tr>
+  <tr>
+    <td align="center"><img src="assets/screenshots/layout-horizon-aqsa.png" width="186" alt="Horizon layout over al-Masjid al-Aqsa"><br>Horizon, al-Aqsa Mosque</td>
+    <td align="center"><img src="assets/screenshots/layout-horizon-nabawi.png" width="186" alt="Horizon layout over the Prophet's Mosque"><br>Horizon, Prophet's Mosque</td>
+    <td align="center"><img src="assets/screenshots/layout-kaaba.png" width="186" alt="Kaaba layout"><br>Kaaba</td>
+    <td align="center"><img src="assets/screenshots/layout-qalam.png" width="186" alt="Qalam layout"><br>Qalam</td>
+  </tr>
+</table>
+
+### Panel
+
+All prayer times, with names, with icons, and with icons and the hijri date as digits:
+
+<img src="assets/screenshots/panel-all-names.png" width="654" alt="Horizontal panel showing all prayer times with their names"><br>
+<img src="assets/screenshots/panel-all-icons.png" width="528" alt="Horizontal panel showing all prayer times with icons"><br>
+<img src="assets/screenshots/panel-all-icons-numeric-hijri.png" width="464" alt="Horizontal panel showing all prayer times with icons and a numeric hijri date">
+
+Next prayer only, with its name and with its icon:
+
+<img src="assets/screenshots/panel-next-name.png" width="486" alt="Horizontal panel showing the next prayer with its name"><br>
+<img src="assets/screenshots/panel-next-icon.png" width="440" alt="Horizontal panel showing the next prayer with its icon">
+
+Vertical panel, the next prayer's icon and the minutes left:
+
+<img src="assets/screenshots/panel-vertical.png" width="60" alt="Vertical panel showing the next prayer's icon and the minutes left">
+
 ## How it works
 
 Each mosque page on mawaqit.net embeds a `confData` JSON object containing
