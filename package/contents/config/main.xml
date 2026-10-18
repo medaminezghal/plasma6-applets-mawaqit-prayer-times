@@ -61,8 +61,12 @@
 
         <!-- Appearance -->
         <entry name="layout" type="String">
-            <label>Layout of the desktop widget or panel popup: "classic" (table), "sundial" (24-hour dial) or "cards" (prayer cards under a countdown gauge)</label>
+            <label>Layout of the desktop widget or panel popup: "classic" (table), "sundial" (24-hour dial), "cards" (prayer cards under a countdown gauge) or "horizon" (the sky over a mosque)</label>
             <default>classic</default>
+        </entry>
+        <entry name="horizonMosque" type="String">
+            <label>Mosque on the Horizon layout's skyline: "aqsa" (al-Masjid al-Aqsa) or "nabawi" (al-Masjid an-Nabawi)</label>
+            <default>aqsa</default>
         </entry>
         <entry name="dialBackground" type="String">
             <label>Background of the Sundial layout: "theme" or "sky" (drawn from today's times)</label>

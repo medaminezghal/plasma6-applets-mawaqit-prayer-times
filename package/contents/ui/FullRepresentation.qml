@@ -8,6 +8,7 @@ import org.kde.plasma.extras as PlasmaExtras
 import org.kde.ksvg as KSvg
 import org.kde.kirigami as Kirigami
 import "../code/mawaqit.js" as Mawaqit
+import "../code/horizon.js" as Horizon
 
 // Plain Item (not PlasmaExtras.Representation): the popup height is derived
 // directly from the content's implicit height, so nothing can be clipped.
@@ -23,9 +24,41 @@ Item {
     readonly property bool hasContent: root.configured && root.calendar !== null
     readonly property bool sundial: root.appLayout === "sundial"
     readonly property bool cardsLayout: root.appLayout === "cards"
-    // Text over the Sky background is white unless the user chose a colour
-    readonly property color inkColor: root.appSkyBackground && !Plasmoid.configuration.customTextColor
-                                      ? "#ffffff" : root.appTextColor
+    readonly property bool horizonLayout: root.appLayout === "horizon"
+
+    /* The Horizon layout's sky at this minute, shared by its background and the
+     * text over it. Minutes are fine enough: the colours and the sun move
+     * far less than a pixel in a minute. */
+    property real nowMinutes: minutesNow()
+    function minutesNow() {
+        var d = new Date();
+        return d.getHours() * 60 + d.getMinutes() + d.getSeconds() / 60;
+    }
+    Timer {
+        interval: 30000
+        running: full.horizonLayout && full.visible
+        repeat: true
+        triggeredOnStart: true
+        onTriggered: full.nowMinutes = full.minutesNow()
+    }
+    readonly property var horizonSky: root.appHorizonScene && root.todayTimes
+                                      ? Horizon.skyAt(nowMinutes, root.todayTimes) : null
+    // The moon's age is the day of the hijri month
+    readonly property int hijriDay: {
+        var d = parseInt(String(root.hijriDateNumeric).split("/")[0], 10);
+        return d > 0 ? d : 1;
+    }
+
+    // Text over the Sky background is white unless the user chose a colour;
+    // over the Horizon layout it is dark navy while the sky behind it is bright
+    readonly property color inkColor: Plasmoid.configuration.customTextColor
+                                      ? root.appTextColor
+                                      : root.appSkyBackground ? "#ffffff"
+                                      : horizonSky ? skyInk(horizonSky.top)
+                                      : root.appTextColor
+    function skyInk(color) {
+        return Horizon.luminance(color) > 0.55 ? "#0d2242" : "#ffffff";
+    }
     // Every spacing below is multiplied by the font-size slider too, so a
     // bigger font grows the whole layout uniformly instead of only the text.
     // Animated, so applying a new size eases the layout into it instead of
@@ -265,7 +298,7 @@ Item {
      * painted card lands exactly where the theme frame was. */
     Rectangle {
         anchors.fill: parent
-        visible: root.appCustomBackground && !root.appSkyBackground
+        visible: root.appCustomBackground && !root.appSkyBackground && !root.appHorizonScene
         color: root.appBackgroundColor
         radius: full.inPopup ? full.popupRadius : root.appBackgroundRadius
         anchors.leftMargin: full.inPopup ? frameMetrics.bleed("left")
@@ -288,6 +321,29 @@ Item {
         // The dial's centre, in our own coordinates
         centreX: contentColumn.x + body.x + body.width / 2 - x
         centreY: contentColumn.y + body.y + body.height / 2 - y
+        anchors.leftMargin: full.inPopup ? frameMetrics.bleed("left")
+                                         : frameMetrics.shadow("left")
+        anchors.rightMargin: full.inPopup ? frameMetrics.bleed("right")
+                                          : frameMetrics.shadow("right")
+        anchors.topMargin: full.inPopup ? frameMetrics.bleed("top")
+                                        : frameMetrics.shadow("top")
+        anchors.bottomMargin: full.inPopup ? frameMetrics.bleed("bottom")
+                                           : frameMetrics.shadow("bottom")
+    }
+
+    // The Horizon layout's sky over its mosque, same shape again
+    HorizonBackground {
+        anchors.fill: parent
+        visible: root.appHorizonScene
+        mosque: root.appHorizonMosque
+        times: root.todayTimes
+        hijriDay: full.hijriDay
+        minutes: full.nowMinutes
+        sky: full.horizonSky
+        radius: full.inPopup ? full.popupRadius : root.appBackgroundRadius
+        // Where the cards start and the countdown ends, in our coordinates
+        horizonY: contentColumn.y + body.y + horizonView.y + horizonView.horizonY - y
+        textBottom: contentColumn.y + body.y + horizonView.y + horizonView.textBottom - y
         anchors.leftMargin: full.inPopup ? frameMetrics.bleed("left")
                                          : frameMetrics.shadow("left")
         anchors.rightMargin: full.inPopup ? frameMetrics.bleed("right")
@@ -454,7 +510,7 @@ Item {
          * The Classic table always lays itself out, even when another
          * layout is shown, and its size is the body's size. So the widget
          * and the popup keep exactly the same size whichever layout or
-         * background is picked; the Sundial or the Cards fill that space.
+         * background is picked; the other layouts fill that space.
          * Opacity 0, not visible: false, so the table keeps taking part in
          * the size calculation. */
         Item {
@@ -469,8 +525,8 @@ Item {
                 anchors.right: parent.right
                 anchors.top: parent.top
                 spacing: 0
-                opacity: (full.sundial || full.cardsLayout) ? 0 : 1
-                enabled: !full.sundial && !full.cardsLayout
+                opacity: (full.sundial || full.cardsLayout || full.horizonLayout) ? 0 : 1
+                enabled: !full.sundial && !full.cardsLayout && !full.horizonLayout
 
                 Repeater {
                     model: 6
@@ -612,6 +668,37 @@ Item {
                 cornerRadius: Kirigami.Units.cornerRadius
                 textColor: root.appTextColor
                 accentColor: root.appAccentColor
+            }
+
+            HorizonView {
+                id: horizonView
+                anchors.fill: parent
+                visible: full.horizonLayout
+
+                times: root.todayTimes
+                minutes: full.nowMinutes
+                names: root.names
+                timeLabels: {
+                    var out = [];
+                    if (root.todayTimes) {
+                        for (var i = 0; i < 6; ++i) {
+                            out.push(Mawaqit.formatTime(root.todayTimes[i], root.use24h));
+                        }
+                    }
+                    return out;
+                }
+                nextIndex: root.next !== null ? root.next.index : -1
+                countdownText: root.countdownClock
+                progress: root.nextProgress
+                showSunrise: Plasmoid.configuration.showSunrise
+                boldNext: root.appBoldNext
+
+                fontFamily: root.appFontFamily
+                pointSize: Kirigami.Theme.defaultFont.pointSize * full.sp
+                sizeScale: full.sp
+                inkColor: Plasmoid.configuration.customTextColor
+                          ? root.appTextColor
+                          : full.horizonSky ? full.skyInk(full.horizonSky.mid) : "#ffffff"
             }
         }
     }

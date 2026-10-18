@@ -18,12 +18,17 @@ exact timetable your mosque publishes on [mawaqit.net](https://mawaqit.net)
   for its own glyph — first light, sunrise, zenith, shadow, sunset, night —
   which frees up a lot of panel width. The settings show the six icons with
   their names so nothing has to be guessed
-- **Three layouts for the desktop widget and the popup**: **Classic**, the
+- **Four layouts for the desktop widget and the popup**: **Classic**, the
   daily table; **Sundial**, today's prayers around a 24-hour dial (noon
   at the top, midnight at the bottom) with a live countdown to the next
-  prayer in the middle; or **Cards**, one card per prayer under a
+  prayer in the middle; **Cards**, one card per prayer under a
   half-circle gauge that fills up from the previous prayer to the next,
-  with the live countdown inside it. The Sundial can sit on your theme's background or
+  with the live countdown inside it; or **Horizon**, the sky over
+  al-Masjid al-Aqsa or al-Masjid an-Nabawi through the day — night, dawn,
+  day, golden hour and dusk follow today's prayer times, the sun crosses
+  from sunrise to maghrib, and the moon stands where its age puts it, in
+  the phase of the hijri date, from the thin hilal after maghrib on the
+  1st to the full moon in the middle of the month. The Sundial can sit on your theme's background or
   on a **Sky** drawn from the day's own times — daylight from sunrise to
   maghrib, night from isha to fajr, twilight in between — so the horizon
   moves with the seasons. Switching layout or background never resizes the
