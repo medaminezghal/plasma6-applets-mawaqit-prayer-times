@@ -40,9 +40,13 @@ KCM.SimpleKCM {
     // Layout of the expanded view, and the Sundial's background
     property string cfg_layout
     property string cfg_dialBackground
+    property string cfg_horizonMosque
     readonly property bool sundial: cfg_layout === "sundial"
     // The Sky replaces the custom background in the Sundial layout
     readonly property bool skyShown: sundial && cfg_dialBackground === "sky"
+    readonly property bool horizon: cfg_layout === "horizon"
+    // Layouts that paint their own background, so the custom one is unused
+    readonly property bool ownBackground: skyShown || horizon
 
     FontPickerSheet {
         id: fontSheet
@@ -61,15 +65,15 @@ KCM.SimpleKCM {
         }
 
         // Radio buttons write the key directly, like "Panel shows:" on the
-        // Panel page. Anything other than "sundial" or "cards" reads as
-        // Classic, the same fallback main.qml uses.
+        // Panel page. Anything other than "sundial", "cards" or "horizon"
+        // reads as Classic, the same fallback main.qml uses.
         ColumnLayout {
             Kirigami.FormData.label: i18n("Layout:")
             spacing: Kirigami.Units.smallSpacing
 
             QQC2.RadioButton {
                 text: i18n("Classic")
-                checked: !page.sundial && page.cfg_layout !== "cards"
+                checked: !page.sundial && page.cfg_layout !== "cards" && !page.horizon
                 onToggled: page.cfg_layout = "classic"
             }
 
@@ -84,6 +88,42 @@ KCM.SimpleKCM {
                 checked: page.cfg_layout === "cards"
                 onToggled: page.cfg_layout = "cards"
             }
+
+            QQC2.RadioButton {
+                text: i18n("Horizon")
+                checked: page.horizon
+                onToggled: page.cfg_layout = "horizon"
+            }
+        }
+
+        // Radio buttons write the key directly; anything other than
+        // "nabawi" reads as al-Aqsa, the same fallback main.qml uses
+        ColumnLayout {
+            Kirigami.FormData.label: i18n("Mosque:")
+            visible: page.horizon
+            spacing: Kirigami.Units.smallSpacing
+
+            QQC2.RadioButton {
+                text: i18n("Al-Aqsa Mosque")
+                checked: page.cfg_horizonMosque !== "nabawi"
+                onToggled: page.cfg_horizonMosque = "aqsa"
+            }
+
+            QQC2.RadioButton {
+                text: i18n("Prophet's Mosque")
+                checked: page.cfg_horizonMosque === "nabawi"
+                onToggled: page.cfg_horizonMosque = "nabawi"
+            }
+        }
+
+        QQC2.Label {
+            Layout.fillWidth: true
+            Layout.maximumWidth: Kirigami.Units.gridUnit * 22
+            visible: page.horizon
+            text: i18n("The sky over the mosque through the day, following today's prayer times, with the sun and the moon where they stand. The moon's phase follows the hijri date.")
+            font.pointSize: Kirigami.Theme.smallFont.pointSize
+            opacity: 0.7
+            wrapMode: Text.WordWrap
         }
 
         ColumnLayout {
@@ -238,20 +278,20 @@ KCM.SimpleKCM {
         QQC2.CheckBox {
             id: customBgCheck
             Kirigami.FormData.label: i18n("Background:")
-            enabled: !page.skyShown
+            enabled: !page.ownBackground
             text: i18n("Use a custom background")
         }
 
         KQControls.ColorButton {
             id: bgColorButton
             Kirigami.FormData.label: i18n("Color:")
-            enabled: customBgCheck.checked && !page.skyShown
+            enabled: customBgCheck.checked && !page.ownBackground
             showAlphaChannel: false
         }
 
         RowLayout {
             Kirigami.FormData.label: i18n("Opacity:")
-            enabled: customBgCheck.checked && !page.skyShown
+            enabled: customBgCheck.checked && !page.ownBackground
             Layout.fillWidth: true
 
             QQC2.Slider {
@@ -272,8 +312,8 @@ KCM.SimpleKCM {
 
         RowLayout {
             Kirigami.FormData.label: i18n("Corner radius:")
-            // The Sky is cut to this radius too
-            enabled: customBgCheck.checked || page.skyShown
+            // The Sky and the Horizon layout are cut to this radius too
+            enabled: customBgCheck.checked || page.ownBackground
             visible: !page.inPanel
             Layout.fillWidth: true
 
@@ -296,7 +336,9 @@ KCM.SimpleKCM {
         QQC2.Label {
             Layout.fillWidth: true
             Layout.maximumWidth: Kirigami.Units.gridUnit * 22
-            text: page.skyShown
+            text: page.horizon
+                  ? i18n("The Horizon layout draws its own sky; the custom background applies again with another layout.")
+                  : page.skyShown
                   ? i18n("The Sundial's Sky background is in use; the custom background applies again with the Classic layout or the Theme background.")
                   : page.inPanel
                   ? i18n("A custom background replaces the popup's theme frame, behind the prayer times. The popup keeps the theme's corner shape.")
