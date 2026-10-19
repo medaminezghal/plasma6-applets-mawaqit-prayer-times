@@ -28,7 +28,9 @@ exact timetable your mosque publishes on [mawaqit.net](https://mawaqit.net)
   day, golden hour and dusk follow today's prayer times, the sun crosses
   from sunrise to maghrib, and the moon stands where its age puts it, in
   the phase of the hijri date, from the thin hilal after maghrib on the
-  1st to the full moon in the middle of the month; **Kaaba**
+  1st to the full moon in the middle of the month; when either passes
+  behind the mosque name, the name is backlit by the sun or moonlit at
+  night; **Kaaba**
   (الكعبة), its black cloth (the kiswa) with the gold belt, one cartouche
   per prayer — the prayers already prayed today are embroidered in gold
   and the next one is stitched, thread and needle, as its time
@@ -169,9 +171,23 @@ paru -S plasma6-applets-mawaqit-prayer-times
 
 ### From source
 
+You need `git` and `qsb` from Qt Shader Tools (`qt6-shadertools` on Arch,
+`qt6-shader-baker` on Debian/Ubuntu). `build-shaders.sh` compiles the widget's
+shaders; without them the widget still works, but the Horizon layout's header
+keeps a plain color instead of being lit by the sun and the moon.
+
 ```sh
+git clone https://github.com/medaminezghal/plasma6-applets-mawaqit-prayer-times.git
+cd plasma6-applets-mawaqit-prayer-times
+./build-shaders.sh
 kpackagetool6 --type Plasma/Applet --install package
-# upgrade later with:
+```
+
+To upgrade later, from the same folder:
+
+```sh
+git pull
+./build-shaders.sh
 kpackagetool6 --type Plasma/Applet --upgrade package
 ```
 

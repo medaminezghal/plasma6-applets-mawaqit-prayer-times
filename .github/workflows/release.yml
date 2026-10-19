@@ -46,6 +46,16 @@ jobs:
             echo "should_release=true" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Compile shaders
+        if: steps.v.outputs.should_release == 'true'
+        run: |
+          set -euo pipefail
+          # qsb from a pinned Qt Shader Tools, so every release compiles the
+          # shaders the same way: the same version gives byte-identical files
+          python3 -m venv "$RUNNER_TEMP/qsb"
+          "$RUNNER_TEMP/qsb/bin/pip" install --quiet PySide6-Addons==6.12.0
+          QSB="$RUNNER_TEMP/qsb/bin/pyside6-qsb" ./build-shaders.sh
+
       - name: Build .plasmoid
         id: build
         if: steps.v.outputs.should_release == 'true'
@@ -54,7 +64,9 @@ jobs:
           ASSET="${PKGNAME}-${{ steps.v.outputs.version }}.plasmoid"
           # metadata.json and contents/ must sit at the archive ROOT: kpackage
           # only descends into a single top-level directory, never two entries.
-          ( cd package && zip -r -X -q "../$ASSET" metadata.json contents -x '.*' '*/.*' )
+          # The shader sources stay in the repository; only the compiled .qsb ship.
+          ( cd package && zip -r -X -q "../$ASSET" metadata.json contents \
+                -x '.*' '*/.*' 'contents/shaders/*.frag' )
           echo "asset=$ASSET" >> "$GITHUB_OUTPUT"
 
       - name: Verify the artifact
@@ -65,13 +77,19 @@ jobs:
           # Read the zip from Python. Piping `unzip -p` into `python3 -` does not
           # work: the heredoc owns stdin, so the pipe is silently discarded.
           python3 - "$ASSET" "${{ steps.v.outputs.version }}" <<'PY'
-          import json, sys, zipfile
+          import glob, json, os, sys, zipfile
           asset, want = sys.argv[1], sys.argv[2]
           with zipfile.ZipFile(asset) as z:
               bad = z.testzip()
               assert bad is None, f"corrupt entry: {bad}"
-              roots = sorted({n.split("/")[0] for n in z.namelist()})
+              names = z.namelist()
+              roots = sorted({n.split("/")[0] for n in names})
               assert roots == ["contents", "metadata.json"], f"bad zip root: {roots}"
+              # Every shader source has its compiled .qsb, and no source ships
+              for src in glob.glob("package/contents/shaders/*.frag"):
+                  qsb = "contents/shaders/" + os.path.basename(src) + ".qsb"
+                  assert qsb in names, f"compiled shader missing: {qsb}"
+              assert not any(n.endswith(".frag") for n in names), "shader source in the package"
               m = json.loads(z.read("metadata.json"))["KPlugin"]
           assert m["Version"] == want, f'Version {m["Version"]} != {want}'
           assert m.get("Id"), "KPlugin.Id missing — kpackagetool6 would reject this"
@@ -81,6 +99,8 @@ jobs:
             echo "### \`$ASSET\`"
             echo '```'
             sha256sum "$ASSET"
+            # so a distribution package that compiles them can compare
+            sha256sum package/contents/shaders/*.qsb
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
 

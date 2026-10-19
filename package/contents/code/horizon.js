@@ -118,6 +118,39 @@ function arcPoint(f, w, horizonY, lift) {
 }
 
 /*
+ * Where the sun and the moon stand in a scene w wide whose horizon is at
+ * horizonY, and how big they are: { r, sun: {x, y, f, up}, moon: {...} }.
+ * The arc rises nearly to the top: at their highest the two pass behind
+ * the mosque name and the hijri date, which the header lighting keeps
+ * readable (see shaders/headerlight.frag).
+ */
+function bodiesAt(n, times, hijriDay, w, horizonY) {
+    var u = Math.min(1.6, w / 400);
+    var r = Math.max(6, 12 * u);
+    var lift = Math.max(r * 2, horizonY - r * 2);
+    var sun = sunAt(n, times), moon = moonAt(n, times, hijriDay);
+    var sp = arcPoint(sun.f, w, horizonY, lift), mp = arcPoint(moon.f, w, horizonY, lift);
+    return {
+        r: r,
+        u: u,
+        sun: { x: sp.x, y: sp.y, f: sun.f, up: sun.up },
+        moon: { x: mp.x, y: mp.y, f: moon.f, up: moon.up }
+    };
+}
+
+/*
+ * The ink of the text in the sky - the mosque name, the hijri date and the
+ * countdown - all switch together: deep navy while the sky behind the
+ * header is bright, light once it is dark. One rule for all of them, so
+ * they never disagree at twilight, and an instant switch, never grey.
+ */
+var NAVY_INK = "#0d2242";
+var SILVER_INK = "#ced8ee";
+function darkInk(sky) {
+    return luminance(sky.top) > 0.45;
+}
+
+/*
  * SVG path of the lit part of the moon on day `hijriDay`, a disc of radius
  * r at (cx, cy), as seen from the northern hemisphere: lit on the right
  * while it grows, on the left while it wanes.
