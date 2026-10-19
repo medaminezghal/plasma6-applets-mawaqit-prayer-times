@@ -73,14 +73,21 @@ function _overlap(p, q, gap) {
 }
 
 // Centre of a card standing on the inside of the track at a time of day:
-// the card is pushed out along the ray until its edge meets the track, less
-// the inset, so it sits next to its own point.
+// as close to its own point as it can be while staying the inset inside the
+// track. That is the point itself, clamped to the box the card's centre may
+// move in, so the card sits right against its point on a straight edge and
+// tucks into the corner when the point is near one. (Walking out from the
+// centre along the ray instead left cards near a corner well short of their
+// point - the side of that box is reached first - so they got a leader.)
 function _cardAt(minutes, c, a, b, inset) {
-    var d = direction(minutes);
-    var p = rayToRoundedRect(d.x, d.y,
-                             Math.max(1, a - inset - c.w / 2),
-                             Math.max(1, b - inset - c.h / 2), 0);
-    return { x: p.x, y: p.y, w: c.w, h: c.h };
+    var p = trackPoint(minutes, a, b, 0);
+    var ca = Math.max(0, a - inset - c.w / 2);
+    var cb = Math.max(0, b - inset - c.h / 2);
+    return {
+        x: Math.max(-ca, Math.min(ca, p.x)),
+        y: Math.max(-cb, Math.min(cb, p.y)),
+        w: c.w, h: c.h
+    };
 }
 
 /**
