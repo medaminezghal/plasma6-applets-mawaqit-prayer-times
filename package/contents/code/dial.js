@@ -171,12 +171,3 @@ function formatCountdown(ms) {
     }
     return pad(s);
 }
-
-/** Black or white, whichever reads better on the given colour. */
-function contrastText(r, g, b) {
-    function lin(c) {
-        return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
-    }
-    var lum = 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
-    return lum > 0.179 ? "#000000" : "#ffffff";
-}

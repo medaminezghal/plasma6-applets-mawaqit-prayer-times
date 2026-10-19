@@ -35,18 +35,20 @@ exact timetable your mosque publishes on [mawaqit.net](https://mawaqit.net)
   approaches; or **Qalam** (القلم), the five names written large on paper
   — dry ink for the prayers already prayed today, the next one written by
   a reed pen as its time approaches, the rest a faint pencil guide; the
-  paper turns dark at night. The Sundial can sit on your theme's background or
-  on a **Sky** drawn from the day's own times — daylight from sunrise to
-  maghrib, night from isha to fajr, twilight in between — so the horizon
-  moves with the seasons. Switching layout or background never resizes the
-  widget. The panel itself keeps its compact view
+  paper turns dark at night. The Sundial stands on a **Sky** drawn from the
+  day's own times — daylight from sunrise to maghrib, night from isha to
+  fajr, twilight in between — so the horizon moves with the seasons.
+  Switching layout never resizes the widget. The panel itself keeps its
+  compact view
 - **Hijri date**: shown in the popup, and optionally in the panel as either
   the spelled-out form (2 ربيع الثاني 1448 هـ) or plain digits (02/04/1448)
 - **Appearance customization**: pick a custom font, scale the desktop widget
   or panel popup (panel text follows the panel's thickness), override the
   text and next-prayer accent colors, and give the widget a custom background
   with adjustable color, opacity, and corner radius — every option is opt-in
-  and falls back to your Plasma theme. "Show the next prayer in bold" needs a
+  and falls back to your Plasma theme. Colors and background apply to the
+  Classic and Cards layouts; the Sundial, Horizon, Kaaba and Qalam paint
+  their own. "Show the next prayer in bold" needs a
   font that has a bold style; with fonts that don't, it has no effect
 - **Set up from your mosque's link**: paste the link the Mawaqit app shares
   for your mosque, or its mawaqit.net address, in the settings (see
@@ -67,12 +69,11 @@ All shown in Arabic with a dark Plasma theme, at 18:20 with Isha next.
 <table>
   <tr>
     <td align="center"><img src="assets/screenshots/layout-classic.png" width="200" alt="Classic layout"><br>Classic</td>
-    <td align="center"><img src="assets/screenshots/layout-sundial.png" width="200" alt="Sundial layout on the theme background"><br>Sundial</td>
-    <td align="center"><img src="assets/screenshots/layout-sundial-sky.png" width="186" alt="Sundial layout on the Sky background"><br>Sundial, Sky background</td>
+    <td align="center"><img src="assets/screenshots/layout-sundial.png" width="186" alt="Sundial layout"><br>Sundial</td>
     <td align="center"><img src="assets/screenshots/layout-cards.png" width="200" alt="Cards layout"><br>Cards</td>
+    <td align="center"><img src="assets/screenshots/layout-horizon-aqsa.png" width="186" alt="Horizon layout over al-Masjid al-Aqsa"><br>Horizon, al-Aqsa Mosque</td>
   </tr>
   <tr>
-    <td align="center"><img src="assets/screenshots/layout-horizon-aqsa.png" width="186" alt="Horizon layout over al-Masjid al-Aqsa"><br>Horizon, al-Aqsa Mosque</td>
     <td align="center"><img src="assets/screenshots/layout-horizon-nabawi.png" width="186" alt="Horizon layout over the Prophet's Mosque"><br>Horizon, Prophet's Mosque</td>
     <td align="center"><img src="assets/screenshots/layout-kaaba.png" width="186" alt="Kaaba layout"><br>Kaaba</td>
     <td align="center"><img src="assets/screenshots/layout-qalam.png" width="186" alt="Qalam layout"><br>Qalam</td>

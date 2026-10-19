@@ -37,18 +37,20 @@ KCM.SimpleKCM {
     property int cfg_backgroundOpacity
     property int cfg_backgroundRadius
 
-    // Layout of the expanded view, and the Sundial's background
+    // Layout of the expanded view, and the Horizon layout's mosque
     property string cfg_layout
-    property string cfg_dialBackground
     property string cfg_horizonMosque
     readonly property bool sundial: cfg_layout === "sundial"
-    // The Sky replaces the custom background in the Sundial layout
-    readonly property bool skyShown: sundial && cfg_dialBackground === "sky"
     readonly property bool horizon: cfg_layout === "horizon"
     readonly property bool kaaba: cfg_layout === "kaaba"
     readonly property bool qalam: cfg_layout === "qalam"
-    // Layouts that paint their own background, so the custom one is unused
-    readonly property bool ownBackground: skyShown || horizon || kaaba || qalam
+    // Layouts that paint their own background and choose their own colors,
+    // so the custom colors and background are unused
+    readonly property bool ownBackground: sundial || horizon || kaaba || qalam
+    readonly property string ownLayoutName: sundial ? i18n("Sundial")
+                                            : horizon ? i18n("Horizon")
+                                            : kaaba ? i18n("Kaaba")
+                                            : qalam ? i18n("Qalam") : ""
 
     FontPickerSheet {
         id: fontSheet
@@ -162,31 +164,11 @@ KCM.SimpleKCM {
             wrapMode: Text.WordWrap
         }
 
-        ColumnLayout {
-            Kirigami.FormData.label: i18n("Sundial background:")
-            visible: page.sundial
-            spacing: Kirigami.Units.smallSpacing
-
-            QQC2.RadioButton {
-                text: i18n("Theme")
-                checked: page.cfg_dialBackground !== "sky"
-                onToggled: page.cfg_dialBackground = "theme"
-            }
-
-            QQC2.RadioButton {
-                text: i18n("Sky")
-                checked: page.cfg_dialBackground === "sky"
-                onToggled: page.cfg_dialBackground = "sky"
-            }
-        }
-
         QQC2.Label {
             Layout.fillWidth: true
             Layout.maximumWidth: Kirigami.Units.gridUnit * 22
             visible: page.sundial
-            text: page.skyShown
-                  ? i18n("The sky is drawn from today's prayer times: day from sunrise to maghrib, night from isha to fajr, and the twilights between them.")
-                  : i18n("Uses the theme's background, or the custom background below.")
+            text: i18n("Today's prayers around a 24-hour dial, on a sky drawn from today's prayer times: day from sunrise to maghrib, night from isha to fajr, and the twilights between them.")
             font.pointSize: Kirigami.Theme.smallFont.pointSize
             opacity: 0.7
             wrapMode: Text.WordWrap
@@ -282,27 +264,39 @@ KCM.SimpleKCM {
         QQC2.CheckBox {
             id: customTextColorCheck
             Kirigami.FormData.label: i18n("Text color:")
+            enabled: !page.ownBackground
             text: i18n("Use a custom color")
         }
 
         KQControls.ColorButton {
             id: textColorButton
             Kirigami.FormData.label: i18n("Custom text color:")
-            enabled: customTextColorCheck.checked
+            enabled: customTextColorCheck.checked && !page.ownBackground
             showAlphaChannel: false
         }
 
         QQC2.CheckBox {
             id: customAccentColorCheck
             Kirigami.FormData.label: i18n("Next-prayer accent:")
+            enabled: !page.ownBackground
             text: i18n("Use a custom color")
         }
 
         KQControls.ColorButton {
             id: accentColorButton
             Kirigami.FormData.label: i18n("Custom accent color:")
-            enabled: customAccentColorCheck.checked
+            enabled: customAccentColorCheck.checked && !page.ownBackground
             showAlphaChannel: false
+        }
+
+        QQC2.Label {
+            Layout.fillWidth: true
+            Layout.maximumWidth: Kirigami.Units.gridUnit * 22
+            visible: page.ownBackground
+            text: i18n("The %1 layout uses its own colors; the custom colors apply again with the Classic or Cards layout.", page.ownLayoutName)
+            font.pointSize: Kirigami.Theme.smallFont.pointSize
+            opacity: 0.7
+            wrapMode: Text.WordWrap
         }
 
         /* ---------------------- Background ------------------------- */
@@ -348,8 +342,8 @@ KCM.SimpleKCM {
 
         RowLayout {
             Kirigami.FormData.label: i18n("Corner radius:")
-            // The Sky and the Horizon, Kaaba and Qalam layouts are cut to
-            // this radius too
+            // The Sundial, Horizon, Kaaba and Qalam layouts are cut to this
+            // radius too
             enabled: customBgCheck.checked || page.ownBackground
             visible: !page.inPanel
             Layout.fillWidth: true
@@ -374,13 +368,13 @@ KCM.SimpleKCM {
             Layout.fillWidth: true
             Layout.maximumWidth: Kirigami.Units.gridUnit * 22
             text: page.horizon
-                  ? i18n("The Horizon layout draws its own sky; the custom background applies again with another layout.")
+                  ? i18n("The Horizon layout draws its own sky; the custom background applies again with the Classic or Cards layout.")
                   : page.kaaba
-                  ? i18n("The Kaaba layout draws its own cloth; the custom background applies again with another layout.")
+                  ? i18n("The Kaaba layout draws its own cloth; the custom background applies again with the Classic or Cards layout.")
                   : page.qalam
-                  ? i18n("The Qalam layout draws its own paper; the custom background applies again with another layout.")
-                  : page.skyShown
-                  ? i18n("The Sundial's Sky background is in use; the custom background applies again with the Classic layout or the Theme background.")
+                  ? i18n("The Qalam layout draws its own paper; the custom background applies again with the Classic or Cards layout.")
+                  : page.sundial
+                  ? i18n("The Sundial layout draws its own sky; the custom background applies again with the Classic or Cards layout.")
                   : page.inPanel
                   ? i18n("A custom background replaces the popup's theme frame, behind the prayer times. The popup keeps the theme's corner shape.")
                   : i18n("A custom background replaces the widget's theme frame, behind the prayer times.")
