@@ -81,11 +81,17 @@ Item {
     readonly property color inkColor: root.appSkyBackground ? "#ffffff"
                                       : root.appKaabaScene ? "#d8cdb2"
                                       : root.appQalamScene ? (qalamNight ? "#f2e6ce" : "#24190e")
-                                      : horizonSky ? skyInk(horizonSky.top)
+                                      : horizonSky ? (horizonDarkInk ? Horizon.NAVY_INK : Horizon.SILVER_INK)
                                       : root.appTextColor
-    function skyInk(color) {
-        return Horizon.luminance(color) > 0.55 ? "#0d2242" : "#ffffff";
-    }
+    // Navy or light, for the header and the countdown alike (Horizon.darkInk)
+    readonly property bool horizonDarkInk: horizonSky ? Horizon.darkInk(horizonSky) : false
+    /* The Horizon header is lit by the sun and the moon passing behind it
+     * (shaders/headerlight.frag); its text is then drawn white, as the mask
+     * the shader reads, under the lit band. Without a GPU, or if the shader
+     * cannot load, the header keeps its plain ink. */
+    readonly property bool headerLit: root.appHorizonScene
+                                      && GraphicsInfo.api !== GraphicsInfo.Software
+                                      && headerLight.status !== ShaderEffect.Error
     // Every spacing below is multiplied by the font-size slider too, so a
     // bigger font grows the whole layout uniformly instead of only the text.
     // Animated, so applying a new size eases the layout into it instead of
@@ -365,6 +371,7 @@ Item {
 
     // The Horizon layout's sky over its mosque, same shape again
     HorizonBackground {
+        id: horizonBackground
         anchors.fill: parent
         visible: root.appHorizonScene
         mosque: root.appHorizonMosque
@@ -544,6 +551,7 @@ Item {
         spacing: Kirigami.Units.smallSpacing * full.sp
 
         PlasmaExtras.Heading {
+            id: headerName
             Layout.fillWidth: true
             // A floor, not a demand: a long mosque name elides instead of
             // stretching the widget to fit
@@ -554,21 +562,23 @@ Item {
             horizontalAlignment: Text.AlignHCenter
             font.family: root.appFontFamily
             font.pointSize: Kirigami.Theme.defaultFont.pointSize * 1.2 * full.sp
-            color: full.inkColor
+            color: full.headerLit ? "white" : full.inkColor
         }
 
         PlasmaComponents3.Label {
+            id: headerDate
             Layout.fillWidth: true
             horizontalAlignment: Text.AlignHCenter
             text: root.hijriDateText
             font.family: root.appFontFamily
             font.pointSize: Kirigami.Theme.defaultFont.pointSize * full.sp
             font.weight: Font.DemiBold
-            color: full.inkColor
-            opacity: 0.85
+            color: full.headerLit ? "white" : full.inkColor
+            opacity: full.headerLit ? 1 : 0.85
         }
 
         Kirigami.Separator {
+            id: headerRule
             Layout.fillWidth: true
             Layout.topMargin: Kirigami.Units.smallSpacing * full.sp
             Layout.bottomMargin: Kirigami.Units.smallSpacing * full.sp
@@ -825,8 +835,61 @@ Item {
                 fontFamily: root.appFontFamily
                 pointSize: Kirigami.Theme.defaultFont.pointSize * full.sp
                 sizeScale: full.sp
-                inkColor: full.horizonSky ? full.skyInk(full.horizonSky.mid) : "#ffffff"
+                // Switches with the header (Horizon.darkInk), white at night
+                inkColor: full.horizonSky && full.horizonDarkInk ? Horizon.NAVY_INK : "#ffffff"
             }
         }
+    }
+
+    /* ------------------- Horizon header lighting --------------------- *
+     * The band from the top of the sky down to the rule under the hijri
+     * date, redrawn by headerlight.frag from the sky behind it and the
+     * header text over it. Declared last, so it is drawn over both. */
+    ShaderEffectSource {
+        id: headerSky
+        visible: false
+        sourceItem: full.headerLit ? horizonBackground : null
+        sourceRect: Qt.rect(0, 0, headerLight.width, headerLight.height)
+        live: full.headerLit
+    }
+    // Not live: the countdown under the band changes every second, and a
+    // live source would recapture the whole column each time. The header
+    // text is captured again only when it, its size or its place changes.
+    ShaderEffectSource {
+        id: headerLetters
+        visible: false
+        sourceItem: full.headerLit ? contentColumn : null
+        sourceRect: Qt.rect(headerLight.x - contentColumn.x, headerLight.y - contentColumn.y,
+                            headerLight.width, headerLight.height)
+        live: false
+        readonly property var watched: [full.headerLit, headerName.text, headerName.contentWidth,
+                                        headerName.contentHeight, headerName.y, headerDate.text,
+                                        headerDate.contentWidth, headerDate.contentHeight,
+                                        headerDate.y, contentColumn.x, contentColumn.y,
+                                        contentColumn.width, headerLight.x, headerLight.y,
+                                        headerLight.width, headerLight.height]
+        onWatchedChanged: scheduleUpdate()
+    }
+    ShaderEffect {
+        id: headerLight
+        visible: full.headerLit
+        x: horizonBackground.x
+        y: horizonBackground.y
+        width: horizonBackground.width
+        height: Math.max(1, contentColumn.y + headerRule.y - y)
+        fragmentShader: Qt.resolvedUrl("../shaders/headerlight.frag.qsb")
+
+        readonly property var bodies: horizonBackground.bodies
+        property var sky: headerSky
+        property var letters: headerLetters
+        property size bandSize: Qt.size(width, height)
+        property real darkInk: full.horizonDarkInk ? 1 : 0
+        property real skyLum: full.horizonSky ? Horizon.luminance(full.horizonSky.top) : 0
+        property vector4d sun: bodies ? Qt.vector4d(bodies.sun.x, bodies.sun.y, bodies.r * 1.08,
+                                                    bodies.sun.up ? 1 : 0)
+                                      : Qt.vector4d(0, 0, 1, 0)
+        property vector4d moon: bodies ? Qt.vector4d(bodies.moon.x, bodies.moon.y, bodies.r,
+                                                     bodies.moon.up ? 1 : 0)
+                                       : Qt.vector4d(0, 0, 1, 0)
     }
 }

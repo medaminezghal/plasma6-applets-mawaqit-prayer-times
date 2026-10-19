@@ -25,6 +25,12 @@ Canvas {
     property real radius: 0
 
     readonly property var starList: Horizon.stars(46)
+    // Where the sun and the moon stand now, in this item's coordinates;
+    // the header lighting in FullRepresentation reads them too
+    readonly property var bodies: times && times.length >= 6 && width > 0
+                                  ? Horizon.bodiesAt(minutes, times, hijriDay, width,
+                                                     Math.max(1, horizonY))
+                                  : null
 
     onTimesChanged: requestPaint()
     onHijriDayChanged: requestPaint()
@@ -35,6 +41,7 @@ Canvas {
     onWidthChanged: requestPaint()
     onHeightChanged: requestPaint()
     onRadiusChanged: requestPaint()
+    onBodiesChanged: requestPaint()
 
     function radial(ctx, x, y, r, stops) {
         var g = ctx.createRadialGradient(x, y, 0, x, y, r);
@@ -56,7 +63,7 @@ Canvas {
     onPaint: {
         var ctx = getContext("2d");
         ctx.reset();
-        if (width <= 0 || height <= 0 || !sky || !times || times.length < 6) {
+        if (width <= 0 || height <= 0 || !sky || !bodies) {
             return;
         }
         ctx.save();
@@ -74,16 +81,9 @@ Canvas {
         ctx.fillStyle = g;
         ctx.fillRect(0, 0, width, height);
 
-        var sun = Horizon.sunAt(minutes, times);
-        var moon = Horizon.moonAt(minutes, times, hijriDay);
-        var u = Math.min(1.6, width / 400);
-        var bodyR = Math.max(6, 12 * u);
-        // The arc rises nearly to the top: at their highest the sun and the
-        // moon pass behind the mosque name, which matters less than the
-        // countdown in the middle
-        var lift = Math.max(bodyR * 2, hz - bodyR * 2);
-        var sunP = Horizon.arcPoint(sun.f, width, hz, lift);
-        var moonP = Horizon.arcPoint(moon.f, width, hz, lift);
+        var sun = bodies.sun, moon = bodies.moon;
+        var u = bodies.u, bodyR = bodies.r;
+        var sunP = sun, moonP = moon;
 
         // Warm light along the horizon through the twilights, under the sun
         if (sky.warmGlow) {
@@ -111,7 +111,8 @@ Canvas {
         var daylight = sky.night < 0.3;
         if (moon.up) {
             ctx.save();
-            ctx.globalAlpha = daylight ? 0.7 : 1;
+            // pale in a day sky, as the real moon is
+            ctx.globalAlpha = daylight ? 0.45 : 1;
             if (!daylight) {
                 radial(ctx, moonP.x, moonP.y, bodyR * 3.8,
                        [[0, "rgba(243,240,255,0.4)"], [1, "rgba(243,240,255,0)"]]);
