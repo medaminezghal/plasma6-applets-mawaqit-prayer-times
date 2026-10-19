@@ -21,14 +21,11 @@ Item {
     property string countdownText: ""
     property bool showSunrise: true
     property bool boldNext: true
-    property bool sky: false          // drawn over the Sky background
 
     property string fontFamily: ""
     property real pointSize: 10
     property real sizeScale: 1        // the widget-size slider
     property real cornerRadius: 4
-    property color textColor: "black"
-    property color accentColor: "#3daee9"
 
     /* --------------------------- derived ----------------------------- */
     readonly property bool hasTimes: times !== null && times !== undefined
@@ -45,12 +42,16 @@ Item {
     // Tick marks need room; on a very small widget they would only clutter
     readonly property bool showTicks: Math.min(width, height) >= 110
 
-    readonly property color cardColor: sky ? Qt.rgba(0, 0, 0, 0.28)
-                                           : Qt.rgba(textColor.r, textColor.g, textColor.b, 0.09)
-    readonly property color trackColor: sky ? Qt.rgba(1, 1, 1, 0.55)
-                                            : Qt.rgba(textColor.r, textColor.g, textColor.b, 0.30)
-    readonly property color accentTextColor: Dial.contrastText(accentColor.r, accentColor.g,
-                                                               accentColor.b)
+    /* ---------------------------- palette ---------------------------- *
+     * The dial always stands on the Sky (SkyBackground), so it chooses its
+     * own colours rather than the theme's or the custom ones: white ink,
+     * dark glass cards, and a warm gold for the next prayer that reads on
+     * the day sky as well as the night. */
+    readonly property color textColor: "white"
+    readonly property color accentColor: "#f2c45a"
+    readonly property color accentTextColor: "#241a06"
+    readonly property color cardColor: Qt.rgba(0, 0, 0, 0.28)
+    readonly property color trackColor: Qt.rgba(1, 1, 1, 0.55)
 
     // Minutes since midnight, for the "now" marker; a minute is far finer
     // than a pixel on the track, so twice a minute is plenty
@@ -215,10 +216,9 @@ Item {
             y: at.y - height / 2
             // Sunrise is not a prayer: an outline on the track, not a dot
             color: index === 1 ? "transparent"
-                               : (isNext ? dial.accentColor
-                                         : (dial.sky ? "white" : dial.textColor))
+                               : (isNext ? dial.accentColor : dial.textColor)
             border.width: index === 1 ? Math.max(1, Math.round(dial.sizeScale)) : 0
-            border.color: dial.sky ? "white" : dial.textColor
+            border.color: dial.textColor
         }
     }
 
@@ -226,7 +226,7 @@ Item {
     Item {
         id: nowMarker
         readonly property point at: dial.pointAt(dial.nowMinutes)
-        readonly property color tint: dial.sky ? "white" : dial.accentColor
+        readonly property color tint: "white"
         visible: dial.hasTimes
         x: at.x
         y: at.y
@@ -255,8 +255,7 @@ Item {
             required property int index
             readonly property bool isNext: index === dial.nextIndex
             readonly property var centre: dial.cardCentres[index]
-            readonly property color ink: isNext ? dial.accentTextColor
-                                                : (dial.sky ? "white" : dial.textColor)
+            readonly property color ink: isNext ? dial.accentTextColor : dial.textColor
             visible: dial.shown(index) && centre !== null
             width: dial.cardWidth(index)
             height: dial.cardHeight
@@ -295,7 +294,7 @@ Item {
         anchors.centerIn: parent
         visible: dial.countdownText !== ""
         text: dial.countdownText
-        color: dial.sky ? "white" : dial.textColor
+        color: dial.textColor
         font.family: dial.fontFamily
         font.pointSize: dial.pointSize * 1.5
         font.weight: Font.DemiBold

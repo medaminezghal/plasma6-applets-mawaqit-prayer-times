@@ -74,11 +74,11 @@ Item {
         return "";
     }
 
-    // Text over the Sky background is white unless the user chose a colour;
-    // over the Horizon layout it is dark navy while the sky behind it is bright
-    readonly property color inkColor: Plasmoid.configuration.customTextColor
-                                      ? root.appTextColor
-                                      : root.appSkyBackground ? "#ffffff"
+    // The layouts that paint their own background choose their own colours,
+    // whatever is set for Classic and Cards: text over the Sundial's Sky is
+    // white, and over the Horizon layout it is dark navy while the sky
+    // behind it is bright
+    readonly property color inkColor: root.appSkyBackground ? "#ffffff"
                                       : root.appKaabaScene ? "#d8cdb2"
                                       : root.appQalamScene ? (qalamNight ? "#f2e6ce" : "#24190e")
                                       : horizonSky ? skyInk(horizonSky.top)
@@ -703,14 +703,11 @@ Item {
                 countdownText: root.countdownClock
                 showSunrise: Plasmoid.configuration.showSunrise
                 boldNext: root.appBoldNext
-                sky: root.appSkyBackground
 
                 fontFamily: root.appFontFamily
                 pointSize: Kirigami.Theme.defaultFont.pointSize * full.sp
                 sizeScale: full.sp
                 cornerRadius: Kirigami.Units.cornerRadius
-                textColor: full.inkColor
-                accentColor: root.appAccentColor
             }
 
             CardsView {
@@ -828,9 +825,7 @@ Item {
                 fontFamily: root.appFontFamily
                 pointSize: Kirigami.Theme.defaultFont.pointSize * full.sp
                 sizeScale: full.sp
-                inkColor: Plasmoid.configuration.customTextColor
-                          ? root.appTextColor
-                          : full.horizonSky ? full.skyInk(full.horizonSky.mid) : "#ffffff"
+                inkColor: full.horizonSky ? full.skyInk(full.horizonSky.mid) : "#ffffff"
             }
         }
     }

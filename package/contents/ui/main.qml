@@ -53,11 +53,10 @@ PlasmoidItem {
     readonly property string appLayout: ["sundial", "cards", "horizon", "kaaba", "qalam"]
                                         .indexOf(Plasmoid.configuration.layout) >= 0
                                         ? Plasmoid.configuration.layout : "classic"
-    // The Sky background is drawn from today's times, so until they are
-    // loaded the theme frame stays in place behind the busy indicator or
-    // the placeholder message.
+    // The Sundial stands on a Sky drawn from today's times, so until they
+    // are loaded the theme frame stays in place behind the busy indicator
+    // or the placeholder message.
     readonly property bool appSkyBackground: appLayout === "sundial"
-                                             && Plasmoid.configuration.dialBackground === "sky"
                                              && configured && calendar !== null
     // The Horizon layout is its own background, the sky over a mosque;
     // like the Sky, only once today's times are there to draw it from

@@ -68,10 +68,6 @@
             <label>Mosque on the Horizon layout's skyline: "aqsa" (al-Masjid al-Aqsa) or "nabawi" (al-Masjid an-Nabawi)</label>
             <default>aqsa</default>
         </entry>
-        <entry name="dialBackground" type="String">
-            <label>Background of the Sundial layout: "theme" or "sky" (drawn from today's times)</label>
-            <default>theme</default>
-        </entry>
         <entry name="fontFamily" type="String">
             <label>Font family for the prayer times ("" = system default)</label>
             <default></default>
