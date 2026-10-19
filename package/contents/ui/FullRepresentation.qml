@@ -305,10 +305,14 @@ Item {
     }
 
     // Width: the widest row wins, with a 14-gridUnit floor (the original
-    // minimum) so the table does not turn into a narrow strip at small sizes
+    // minimum) so the table does not turn into a narrow strip at small sizes.
+    // The frame padding we add back ourselves goes on top of the floor, the
+    // way the container's own padding does, so a layout that paints its own
+    // background is exactly as wide as one on the theme frame.
     Layout.minimumWidth: hasContent
                          ? Math.max(Kirigami.Units.gridUnit * 14 * sp,
-                                    Math.ceil(contentColumn.implicitWidth) + padLeft + padRight)
+                                    Math.ceil(contentColumn.implicitWidth) + outerMargin * 2)
+                           + (padLeft - outerMargin) + (padRight - outerMargin)
                          : Kirigami.Units.gridUnit * 14
     Layout.preferredWidth: Layout.minimumWidth
     Layout.maximumWidth: Layout.minimumWidth
