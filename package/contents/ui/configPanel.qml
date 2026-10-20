@@ -30,6 +30,7 @@ KCM.SimpleKCM {
     /* ------------------- bound configuration keys ------------------- */
     property string cfg_displayMode
     property bool cfg_verticalShowAllPrayers
+    property alias cfg_verticalShowHijri: verticalHijriCheck.checked
     property alias cfg_showCountdownInPanel: countdownCheck.checked
     property alias cfg_showHijriInPanel: hijriCheck.checked
     property alias cfg_numericHijriInPanel: numericHijriCheck.checked
@@ -126,6 +127,15 @@ KCM.SimpleKCM {
                 text: i18n("Only the next prayer")
                 checked: !page.cfg_verticalShowAllPrayers
                 onToggled: page.cfg_verticalShowAllPrayers = false
+            }
+
+            // A key of its own, off by default: the horizontal strip's
+            // showHijriInPanel is on by default and would otherwise add the
+            // date to existing vertical panels. Always digits here.
+            QQC2.CheckBox {
+                id: verticalHijriCheck
+                Layout.topMargin: Kirigami.Units.smallSpacing
+                text: i18n("Show Hijri date")
             }
         }
 

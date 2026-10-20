@@ -22,6 +22,9 @@ MouseArea {
     readonly property bool showHijri: Plasmoid.configuration.showHijriInPanel
     // Vertical panel: stack every prayer instead of the next prayer's glyph
     readonly property bool verticalAll: Plasmoid.configuration.verticalShowAllPrayers
+    // Vertical panel: the hijri date as digits on top, day over month over year
+    readonly property bool verticalHijri: Plasmoid.configuration.verticalShowHijri
+    readonly property var hijriParts: String(root.hijriDateNumeric).split("/")
 
     // Vertical panel: the next prayer's own glyph, sized to leave room for
     // the countdown line underneath
@@ -88,6 +91,9 @@ MouseArea {
     // between them grow with it
     readonly property real periodPx: Math.round(verticalLinePx * 0.75)
     readonly property real dotSide: Math.max(2, Math.round(verticalLinePx * 0.16))
+    // One big dot: between the hijri day, month and year, and between the
+    // next prayer's time and the minutes left
+    readonly property real bigDotSide: Math.max(3, Math.round(verticalLinePx * 0.26))
 
     // In "all prayers" mode the next prayer carries its countdown underneath,
     // so it is the two-line case; the other prayers use a slightly smaller
@@ -160,6 +166,13 @@ MouseArea {
         ColumnLayout {
             spacing: 0
 
+            Loader {
+                Layout.alignment: Qt.AlignHCenter
+                active: compact.ready && compact.verticalHijri
+                visible: active
+                sourceComponent: verticalHijriComp
+            }
+
             Kirigami.Icon {
                 Layout.alignment: Qt.AlignHCenter
                 Layout.preferredWidth: compact.iconSide
@@ -216,13 +229,20 @@ MouseArea {
      * 12-hour format, the AM/PM marker. Two digits per line fit any panel
      * thickness. The next prayer takes the panel's bold and accent
      * settings, like the horizontal strip, and carries the minutes left
-     * under a short rule, as the next-prayer view shows them. After Isha
+     * under a big dot, as the next-prayer view shows them. After Isha
      * the next prayer is tomorrow's Fajr, which is not in today's stack,
      * so nothing is marked, as on the horizontal strip. */
     Component {
         id: verticalFullComp
         ColumnLayout {
             spacing: Kirigami.Units.smallSpacing * 2
+
+            Loader {
+                Layout.alignment: Qt.AlignHCenter
+                active: compact.verticalHijri
+                visible: active
+                sourceComponent: verticalHijriComp
+            }
 
             Repeater {
                 model: compact.shownIndices
@@ -324,18 +344,22 @@ MouseArea {
                         color: stackCell.ink
                     }
 
-                    // Minutes left: a short rule, then the number and its unit
+                    // Minutes left: one big dot, the same as between the
+                    // hijri day, month and year, then the number and its unit
                     // on lines of their own. They belong to the next prayer,
-                    // so they take its accent and bold too; bold thickens the
-                    // rule as it does the dots.
+                    // so they take its accent and bold too; bold enlarges the
+                    // dot as it does the colon's.
                     Rectangle {
+                        readonly property real side: stackCell.bold
+                                                     ? Math.round(compact.bigDotSide * 1.25)
+                                                     : compact.bigDotSide
                         visible: stackCell.isNext && root.countdownMin !== ""
                         Layout.alignment: Qt.AlignHCenter
-                        Layout.preferredWidth: Math.round(compact.panelThickness * 0.5)
-                        Layout.preferredHeight: stackCell.bold ? 2 : 1
+                        Layout.preferredWidth: side
+                        Layout.preferredHeight: side
                         Layout.topMargin: Kirigami.Units.smallSpacing
                         Layout.bottomMargin: Kirigami.Units.smallSpacing
-                        radius: height / 2
+                        radius: side / 2
                         color: stackCell.ink
                     }
 
@@ -373,6 +397,66 @@ MouseArea {
                         color: stackCell.ink
                     }
                 }
+            }
+        }
+    }
+
+    /* --------------- vertical panel: hijri date on top -----------------
+     * The horizontal strip's hijri date as digits, turned on its end:
+     * day, a big dot, month, a big dot, the year, then the same thin
+     * separator the horizontal strip draws between the date and the
+     * prayers. DemiBold, like the horizontal date. Four digits fit the
+     * width of any panel at this size; HorizontalFit only steps in for a
+     * wide custom font. Shown above both vertical views. */
+    Component {
+        id: verticalHijriComp
+        ColumnLayout {
+            spacing: 0
+
+            Repeater {
+                model: compact.hijriParts
+                delegate: ColumnLayout {
+                    id: hijriPart
+                    required property string modelData
+                    required property int index
+                    Layout.alignment: Qt.AlignHCenter
+                    spacing: 0
+
+                    Rectangle {
+                        visible: hijriPart.index > 0
+                        Layout.alignment: Qt.AlignHCenter
+                        Layout.preferredWidth: compact.bigDotSide
+                        Layout.preferredHeight: compact.bigDotSide
+                        Layout.topMargin: Kirigami.Units.smallSpacing
+                        Layout.bottomMargin: Kirigami.Units.smallSpacing
+                        radius: width / 2
+                        color: root.panelTextColor
+                    }
+
+                    PlasmaComponents3.Label {
+                        Layout.alignment: Qt.AlignHCenter
+                        Layout.preferredWidth: compact.panelThickness
+                        Layout.maximumWidth: compact.panelThickness
+                        Layout.preferredHeight: compact.verticalLinePx
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                        fontSizeMode: Text.HorizontalFit
+                        minimumPixelSize: compact.minMinutesPx
+                        text: hijriPart.modelData
+                        font.family: compact.appFont
+                        font.pixelSize: compact.verticalLinePx
+                        font.weight: Font.DemiBold
+                        color: root.panelTextColor
+                    }
+                }
+            }
+
+            // The horizontal strip's separator, turned to lie across the panel
+            Kirigami.Separator {
+                Layout.alignment: Qt.AlignHCenter
+                Layout.preferredWidth: compact.panelThickness - Kirigami.Units.smallSpacing * 2
+                Layout.topMargin: Kirigami.Units.smallSpacing * 2
+                Layout.bottomMargin: Kirigami.Units.smallSpacing * 2
             }
         }
     }
