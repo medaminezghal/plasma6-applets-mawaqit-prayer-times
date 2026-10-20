@@ -4,11 +4,12 @@ import QtQuick.Layouts
 import org.kde.kirigami as Kirigami
 import org.kde.kcmutils as KCM
 
-/* The Appearance page of a panel widget: two sub-tabs, Panel for the strip
- * in the panel (configPanel.qml) and Popup for the popup a click opens
- * (configAppearance.qml, the same page a desktop widget gets as its
- * Appearance tab). The Popup tab appears only while the popup is enabled,
- * which is decided on the Panel tab and followed at once, before Apply.
+/* The Appearance page of a panel widget. With the popup off (the default)
+ * it is just the panel strip's settings (ConfigPanel.qml), with no tabs.
+ * Once "Open the popup" is ticked, a tab bar appears on top: Panel for
+ * those settings and Popup for the popup a click opens
+ * (ConfigAppearance.qml, the same page a desktop widget gets as its
+ * Appearance tab). It follows the checkbox at once, before Apply.
  *
  * The settings dialog reads and writes the cfg_* properties of the page it
  * shows (AppletConfiguration.qml in plasma-desktop), so every key of both
@@ -51,21 +52,21 @@ KCM.AbstractKCM {
     property alias cfg_layout: popupPage.cfg_layout
     property alias cfg_horizonMosque: popupPage.cfg_horizonMosque
 
+    // With a single page there is nothing to switch between, so no bar;
+    // hidden, it takes no room (AbstractKCM collapses an invisible header)
     header: QQC2.TabBar {
         id: tabs
+        visible: page.cfg_panelPopupEnabled
 
         QQC2.TabButton {
             text: i18n("Panel")
         }
         QQC2.TabButton {
             text: i18n("Popup")
-            // Hidden, the button takes no room and cannot be reached
-            visible: page.cfg_panelPopupEnabled
-            width: visible ? implicitWidth : 0
         }
     }
 
-    // Disabling the popup while its tab is shown goes back to the Panel tab
+    // Disabling the popup while its tab is shown goes back to the panel page
     Connections {
         target: page
         function onCfg_panelPopupEnabledChanged() {
