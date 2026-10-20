@@ -22,6 +22,23 @@ PlasmoidItem {
     readonly property bool configured: mosqueSlug !== ""
     readonly property bool use24h: Plasmoid.configuration.use24h
     readonly property string displayMode: Plasmoid.configuration.displayMode
+    // In a panel the popup is off unless enabled on the Panel tab: a click
+    // does nothing, and the global shortcut, which expands the widget
+    // through PlasmoidItem's activated handler, is turned back here
+    readonly property bool inPanel: Plasmoid.formFactor === PlasmaCore.Types.Horizontal
+                                    || Plasmoid.formFactor === PlasmaCore.Types.Vertical
+    readonly property bool panelPopupEnabled: Plasmoid.configuration.panelPopupEnabled
+    onExpandedChanged: {
+        if (expanded && inPanel && !panelPopupEnabled) {
+            expanded = false;
+        }
+    }
+    // Disabled while open: close it
+    onPanelPopupEnabledChanged: {
+        if (!panelPopupEnabled && inPanel) {
+            expanded = false;
+        }
+    }
 
     /* ----------------------- appearance (config) ----------------------- */
     // Resolved once here so the representations stay declarative and don't

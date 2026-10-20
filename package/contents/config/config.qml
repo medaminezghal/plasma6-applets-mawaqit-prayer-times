@@ -14,17 +14,19 @@ ConfigModel {
         icon: "preferences-system-time"
         source: "configGeneral.qml"
     }
-    // The strip in the panel itself; only exists in a panel
+    // In a panel: the strip and, while enabled, the popup, as two
+    // sub-tabs of one page
     ConfigCategory {
-        name: i18n("Panel")
-        icon: "preferences-desktop-theme"
-        source: "configPanel.qml"
+        name: i18n("Appearance")
+        icon: "preferences-desktop-color"
+        source: "configPanelAppearance.qml"
         visible: configModel.inPanel
     }
-    // The expanded view: the popup in a panel, the widget on the desktop
+    // On the desktop: the widget itself
     ConfigCategory {
-        name: configModel.inPanel ? i18n("Popup") : i18n("Appearance")
+        name: i18n("Appearance")
         icon: "preferences-desktop-color"
-        source: "configAppearance.qml"
+        source: "ConfigAppearance.qml"
+        visible: !configModel.inPanel
     }
 }

@@ -18,8 +18,10 @@ KCM.SimpleKCM {
                                     || Plasmoid.formFactor === PlasmaCore.Types.Vertical
 
     /* ------------------- bound configuration keys ------------------- */
-    // This page styles the expanded view: the desktop widget, or the popup
-    // of a panel widget. The panel strip has its own page (configPanel.qml).
+    // This page styles the expanded view: the desktop widget's Appearance
+    // tab, or the Popup sub-tab of a panel widget's Appearance tab
+    // (configPanelAppearance.qml). The panel strip has its own page
+    // (ConfigPanel.qml).
     // fontFamily is set by the font picker sheet below; "" = system default.
     property string cfg_fontFamily
     property alias cfg_fontScale: scaleSlider.value

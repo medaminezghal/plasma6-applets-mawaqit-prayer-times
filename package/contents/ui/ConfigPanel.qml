@@ -28,6 +28,7 @@ KCM.SimpleKCM {
     readonly property var prayerLabels: Mawaqit.prayerNames(Plasmoid.configuration.labelLanguage)
 
     /* ------------------- bound configuration keys ------------------- */
+    property alias cfg_panelPopupEnabled: popupCheck.checked
     property string cfg_displayMode
     property bool cfg_verticalShowAllPrayers
     property alias cfg_verticalShowHijri: verticalHijriCheck.checked
@@ -182,6 +183,24 @@ KCM.SimpleKCM {
                     }
                 }
             }
+        }
+
+        // Off by default: the strip shows what most need, and a click does
+        // nothing. On, a click opens the popup, styled on the Popup tab
+        // that appears next to this one.
+        QQC2.CheckBox {
+            id: popupCheck
+            Kirigami.FormData.label: i18n("On click:")
+            text: i18n("Open the popup")
+        }
+
+        QQC2.Label {
+            Layout.fillWidth: true
+            Layout.maximumWidth: Kirigami.Units.gridUnit * 22
+            text: i18n("The popup shows the whole day in the layout chosen on the Popup tab.")
+            font.pointSize: Kirigami.Theme.smallFont.pointSize
+            opacity: 0.7
+            wrapMode: Text.WordWrap
         }
 
         /* -------------------------- Size -------------------------- */
