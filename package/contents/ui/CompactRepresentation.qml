@@ -324,14 +324,19 @@ MouseArea {
                         color: stackCell.ink
                     }
 
-                    // Minutes left, as in the next-prayer view: a short rule,
-                    // then the number and its unit on lines of their own
-                    Kirigami.Separator {
+                    // Minutes left: a short rule, then the number and its unit
+                    // on lines of their own. They belong to the next prayer,
+                    // so they take its accent and bold too; bold thickens the
+                    // rule as it does the dots.
+                    Rectangle {
                         visible: stackCell.isNext && root.countdownMin !== ""
                         Layout.alignment: Qt.AlignHCenter
                         Layout.preferredWidth: Math.round(compact.panelThickness * 0.5)
+                        Layout.preferredHeight: stackCell.bold ? 2 : 1
                         Layout.topMargin: Kirigami.Units.smallSpacing
                         Layout.bottomMargin: Kirigami.Units.smallSpacing
+                        radius: height / 2
+                        color: stackCell.ink
                     }
 
                     PlasmaComponents3.Label {
@@ -347,7 +352,8 @@ MouseArea {
                         font.pixelSize: compact.verticalLinePx
                         visible: stackCell.isNext && root.countdownMin !== ""
                         text: root.countdownMin
-                        color: root.panelTextColor
+                        font.weight: stackCell.bold ? Font.Bold : Font.Normal
+                        color: stackCell.ink
                     }
 
                     PlasmaComponents3.Label {
@@ -363,7 +369,8 @@ MouseArea {
                         font.pixelSize: compact.verticalLinePx
                         visible: stackCell.isNext && root.countdownMin !== ""
                         text: Mawaqit.uiString("m", Plasmoid.configuration.labelLanguage)
-                        color: root.panelTextColor
+                        font.weight: stackCell.bold ? Font.Bold : Font.Normal
+                        color: stackCell.ink
                     }
                 }
             }
