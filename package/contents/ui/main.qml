@@ -152,7 +152,9 @@ PlasmoidItem {
     readonly property var names: Mawaqit.prayerNames(Plasmoid.configuration.labelLanguage)
     readonly property bool rtl: Mawaqit.isArabic(Plasmoid.configuration.labelLanguage)
     readonly property string nextName: next ? names[next.index] : ""
-    readonly property string nextTimeFormatted: next ? Mawaqit.formatTime(next.time, use24h) : ""
+    readonly property string nextTimeFormatted: next
+        ? Mawaqit.formatTime(next.time, use24h, Plasmoid.configuration.labelLanguage)
+        : ""
 
     Plasmoid.icon: Qt.resolvedUrl("../icons/mosque.svg").toString()
 

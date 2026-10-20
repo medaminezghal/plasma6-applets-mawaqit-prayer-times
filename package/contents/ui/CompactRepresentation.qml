@@ -374,7 +374,8 @@ MouseArea {
                             text: (compact.useIcons
                                    ? "" : root.names[prayerCell.modelData] + " ")
                                   + Mawaqit.formatTime(root.todayTimes[prayerCell.modelData],
-                                                       root.use24h)
+                                                       root.use24h,
+                                                       Plasmoid.configuration.labelLanguage)
                             font.family: compact.appFont
                             font.weight: (prayerCell.isNext && root.panelBoldNext)
                                          ? Font.Bold : Font.Normal
