@@ -17,10 +17,11 @@ KCM.SimpleKCM {
 
     readonly property bool vertical: Plasmoid.formFactor === PlasmaCore.Types.Vertical
     // Bold and the accent color mark the next prayer among the others, so
-    // they only mean something when the strip lists every prayer: a
-    // horizontal panel in "All prayer times" mode. A vertical panel, or
-    // "Only the next prayer", shows nothing but the next prayer.
-    readonly property bool showsAllPrayers: !vertical && cfg_displayMode === "full"
+    // they only mean something when the panel lists every prayer: "All
+    // prayer times" in a horizontal panel, or the stacked prayers in a
+    // vertical one. "Only the next prayer" shows nothing else.
+    readonly property bool showsAllPrayers: vertical ? cfg_verticalShowAllPrayers
+                                                     : cfg_displayMode === "full"
 
     // Prayer names for the icon legend, in the prayer-name language saved on
     // the General page
@@ -28,6 +29,7 @@ KCM.SimpleKCM {
 
     /* ------------------- bound configuration keys ------------------- */
     property string cfg_displayMode
+    property bool cfg_verticalShowAllPrayers
     property alias cfg_showCountdownInPanel: countdownCheck.checked
     property alias cfg_showHijriInPanel: hijriCheck.checked
     property alias cfg_numericHijriInPanel: numericHijriCheck.checked
@@ -56,10 +58,9 @@ KCM.SimpleKCM {
             Kirigami.FormData.label: i18n("Display")
         }
 
-        // Only meaningful in a horizontal panel: it switches the inline
-        // panel strip between all prayers and the next one. A vertical
-        // panel always shows the next prayer's glyph, so it's hidden there
-        // (and this whole page only exists in a panel).
+        // Horizontal panel: switches the inline strip between all prayers
+        // and the next one, with the strip's own hijri, countdown and icon
+        // options. A vertical panel has its own choice below.
         ColumnLayout {
             Kirigami.FormData.label: i18n("Panel shows:")
             visible: Plasmoid.formFactor === PlasmaCore.Types.Horizontal
@@ -105,10 +106,33 @@ KCM.SimpleKCM {
             }
         }
 
+        // Vertical panel: the next prayer's glyph with the minutes left (the
+        // default), or every prayer stacked as glyph, hour, two dots and
+        // minutes. A key of its own rather than displayMode, whose "full"
+        // default would otherwise switch existing vertical panels over.
+        // The strings are the horizontal choice's, so they share translations.
+        ColumnLayout {
+            Kirigami.FormData.label: i18n("Panel shows:")
+            visible: page.vertical
+            spacing: Kirigami.Units.smallSpacing
+
+            QQC2.RadioButton {
+                text: i18n("All prayer times of the day")
+                checked: page.cfg_verticalShowAllPrayers
+                onToggled: page.cfg_verticalShowAllPrayers = true
+            }
+
+            QQC2.RadioButton {
+                text: i18n("Only the next prayer")
+                checked: !page.cfg_verticalShowAllPrayers
+                onToggled: page.cfg_verticalShowAllPrayers = false
+            }
+        }
+
         // Legend for the prayer glyphs. In a horizontal panel it explains
         // the option above, and is shown whether or not that option is on
-        // so the glyphs can be understood before committing to them. In a
-        // vertical panel the strip is always a glyph, so the legend stands
+        // so the glyphs can be understood before committing to them. A
+        // vertical panel always shows glyphs, so there the legend stands
         // on its own with no option attached. Mirrored for RTL
         // prayer-name languages so the order matches the panel; the rest
         // of the page keeps the system direction. Follows the saved
@@ -275,7 +299,7 @@ KCM.SimpleKCM {
         QQC2.Label {
             Layout.fillWidth: true
             Layout.maximumWidth: Kirigami.Units.gridUnit * 22
-            visible: !page.vertical && !page.showsAllPrayers
+            visible: !page.showsAllPrayers
             text: i18n("Bold and the accent color mark the next prayer among the others, so they appear here when the panel shows all prayer times.")
             font.pointSize: Kirigami.Theme.smallFont.pointSize
             opacity: 0.7

@@ -20,6 +20,8 @@ MouseArea {
                                   && root.todayTimes !== null
     readonly property bool showCountdown: Plasmoid.configuration.showCountdownInPanel
     readonly property bool showHijri: Plasmoid.configuration.showHijriInPanel
+    // Vertical panel: stack every prayer instead of the next prayer's glyph
+    readonly property bool verticalAll: Plasmoid.configuration.verticalShowAllPrayers
 
     // Vertical panel: the next prayer's own glyph, sized to leave room for
     // the countdown line underneath
@@ -81,6 +83,11 @@ MouseArea {
                                                                maxPanelPx) * panelScale)
     // Smallest size HorizontalFit may shrink either line to
     readonly property int minMinutesPx: 7
+    // Vertical "all prayers" stack: the hour and minutes take the minutes
+    // line's size, the AM/PM marker a step smaller, and the two dots
+    // between them grow with it
+    readonly property real periodPx: Math.round(verticalLinePx * 0.75)
+    readonly property real dotSide: Math.max(2, Math.round(verticalLinePx * 0.16))
 
     // In "all prayers" mode the next prayer carries its countdown underneath,
     // so it is the two-line case; the other prayers use a slightly smaller
@@ -132,7 +139,7 @@ MouseArea {
         anchors.centerIn: parent
         sourceComponent: {
             if (compact.vertical) {
-                return verticalComp;
+                return compact.verticalAll && compact.ready ? verticalFullComp : verticalComp;
             }
             if (!compact.ready) {
                 return placeholderComp;
@@ -146,7 +153,8 @@ MouseArea {
      * for a prayer name and a time side by side, so the strip is replaced
      * by the next prayer's glyph with the minutes left underneath. The
      * tooltip still carries the hijri date and the full countdown, and a
-     * click opens the same table the horizontal panel shows. */
+     * click opens the same table the horizontal panel shows. The panel
+     * settings can stack every prayer instead (verticalFullComp below). */
     Component {
         id: verticalComp
         ColumnLayout {
@@ -198,6 +206,166 @@ MouseArea {
                 font.family: compact.appFont
                 font.pixelSize: compact.verticalLinePx
                 color: root.panelTextColor
+            }
+        }
+    }
+
+    /* -------------- vertical panel: every prayer, stacked --------------
+     * Each prayer stands as a column the panel's width: its glyph, the
+     * hour, two dots side by side for the colon, the minutes and, in
+     * 12-hour format, the AM/PM marker. Two digits per line fit any panel
+     * thickness. The next prayer takes the panel's bold and accent
+     * settings, like the horizontal strip, and carries the minutes left
+     * under a short rule, as the next-prayer view shows them. After Isha
+     * the next prayer is tomorrow's Fajr, which is not in today's stack,
+     * so nothing is marked, as on the horizontal strip. */
+    Component {
+        id: verticalFullComp
+        ColumnLayout {
+            spacing: Kirigami.Units.smallSpacing * 2
+
+            Repeater {
+                model: compact.shownIndices
+                delegate: ColumnLayout {
+                    id: stackCell
+                    required property var modelData
+                    readonly property bool isNext: root.next !== null
+                                                   && root.next.index === modelData
+                                                   && !root.next.tomorrow
+                    readonly property bool bold: isNext && root.panelBoldNext
+                    readonly property color ink: isNext ? root.panelAccentColor
+                                                        : root.panelTextColor
+                    readonly property var time: Mawaqit.timeParts(root.todayTimes[modelData],
+                                                                  root.use24h,
+                                                                  Plasmoid.configuration.labelLanguage)
+                    Layout.alignment: Qt.AlignHCenter
+                    spacing: 0
+                    opacity: modelData === 1 ? 0.7 : 1
+
+                    Kirigami.Icon {
+                        Layout.alignment: Qt.AlignHCenter
+                        Layout.preferredWidth: compact.panelIconSide
+                        Layout.preferredHeight: compact.panelIconSide
+                        source: compact.prayerIcon(stackCell.modelData, stackCell.bold)
+                        isMask: true
+                        color: stackCell.ink
+                    }
+
+                    PlasmaComponents3.Label {
+                        Layout.alignment: Qt.AlignHCenter
+                        Layout.preferredWidth: compact.panelThickness
+                        Layout.maximumWidth: compact.panelThickness
+                        Layout.preferredHeight: font.pixelSize
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                        fontSizeMode: Text.HorizontalFit
+                        minimumPixelSize: compact.minMinutesPx
+                        font.family: compact.appFont
+                        font.pixelSize: compact.verticalLinePx
+                        text: stackCell.time.hour
+                        font.weight: stackCell.bold ? Font.Bold : Font.Normal
+                        color: stackCell.ink
+                    }
+
+                    // The colon turned on its side. Drawn rather than typed:
+                    // a rotated ":" or a two-dot leader sits differently in
+                    // every font; two dots stay centred in any of them.
+                    // Bold makes them a little larger, as it thickens the digits.
+                    Row {
+                        id: colonDots
+                        readonly property real side: stackCell.bold
+                                                     ? Math.round(compact.dotSide * 1.25)
+                                                     : compact.dotSide
+                        Layout.alignment: Qt.AlignHCenter
+                        Layout.topMargin: Math.round(compact.dotSide / 2)
+                        Layout.bottomMargin: Math.round(compact.dotSide / 2)
+                        spacing: side
+                        Repeater {
+                            model: 2
+                            delegate: Rectangle {
+                                width: colonDots.side
+                                height: colonDots.side
+                                radius: width / 2
+                                color: stackCell.ink
+                            }
+                        }
+                    }
+
+                    PlasmaComponents3.Label {
+                        Layout.alignment: Qt.AlignHCenter
+                        Layout.preferredWidth: compact.panelThickness
+                        Layout.maximumWidth: compact.panelThickness
+                        Layout.preferredHeight: font.pixelSize
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                        fontSizeMode: Text.HorizontalFit
+                        minimumPixelSize: compact.minMinutesPx
+                        font.family: compact.appFont
+                        font.pixelSize: compact.verticalLinePx
+                        text: stackCell.time.minute
+                        font.weight: stackCell.bold ? Font.Bold : Font.Normal
+                        color: stackCell.ink
+                    }
+
+                    PlasmaComponents3.Label {
+                        Layout.alignment: Qt.AlignHCenter
+                        Layout.preferredWidth: compact.panelThickness
+                        Layout.maximumWidth: compact.panelThickness
+                        Layout.preferredHeight: font.pixelSize
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                        fontSizeMode: Text.HorizontalFit
+                        minimumPixelSize: compact.minMinutesPx
+                        font.family: compact.appFont
+                        font.pixelSize: compact.periodPx
+                        visible: stackCell.time.period !== ""
+                        text: stackCell.time.period
+                        font.weight: stackCell.bold ? Font.Bold : Font.Normal
+                        color: stackCell.ink
+                    }
+
+                    // Minutes left, as in the next-prayer view: a short rule,
+                    // then the number and its unit on lines of their own
+                    Kirigami.Separator {
+                        visible: stackCell.isNext && root.countdownMin !== ""
+                        Layout.alignment: Qt.AlignHCenter
+                        Layout.preferredWidth: Math.round(compact.panelThickness * 0.5)
+                        Layout.topMargin: Kirigami.Units.smallSpacing
+                        Layout.bottomMargin: Kirigami.Units.smallSpacing
+                    }
+
+                    PlasmaComponents3.Label {
+                        Layout.alignment: Qt.AlignHCenter
+                        Layout.preferredWidth: compact.panelThickness
+                        Layout.maximumWidth: compact.panelThickness
+                        Layout.preferredHeight: font.pixelSize
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                        fontSizeMode: Text.HorizontalFit
+                        minimumPixelSize: compact.minMinutesPx
+                        font.family: compact.appFont
+                        font.pixelSize: compact.verticalLinePx
+                        visible: stackCell.isNext && root.countdownMin !== ""
+                        text: root.countdownMin
+                        color: root.panelTextColor
+                    }
+
+                    PlasmaComponents3.Label {
+                        Layout.alignment: Qt.AlignHCenter
+                        Layout.preferredWidth: compact.panelThickness
+                        Layout.maximumWidth: compact.panelThickness
+                        Layout.preferredHeight: font.pixelSize
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                        fontSizeMode: Text.HorizontalFit
+                        minimumPixelSize: compact.minMinutesPx
+                        font.family: compact.appFont
+                        font.pixelSize: compact.verticalLinePx
+                        visible: stackCell.isNext && root.countdownMin !== ""
+                        text: Mawaqit.uiString("m", Plasmoid.configuration.labelLanguage)
+                        color: root.panelTextColor
+                    }
+                }
             }
         }
     }
