@@ -8,7 +8,8 @@
 # Every Qt that Plasma 6 runs on (6.6 and later) reads the .qsb format that
 # current qsb writes. The same qsb version gives byte-identical files.
 set -eu
-cd "$(dirname "$0")"
+# Run from anywhere: work from the top of the repository
+cd "$(dirname "$0")/.."
 
 if [ -z "${QSB:-}" ]; then
     for candidate in qsb /usr/lib/qt6/bin/qsb /usr/lib64/qt6/bin/qsb pyside6-qsb; do

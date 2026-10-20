@@ -63,7 +63,7 @@
 
         <!-- Hijri date (mosque-provided, cached from confData) -->
         <entry name="cachedHijriAdjustment" type="Int">
-            <label>Mosque-provided hijri adjustment from confData</label>
+            <label>Mosque-provided Hijri adjustment from confData</label>
             <default>0</default>
         </entry>
         <entry name="cachedHijriForce30" type="Bool">

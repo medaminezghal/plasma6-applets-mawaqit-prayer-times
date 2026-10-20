@@ -1,6 +1,6 @@
 #version 440
 
-// The Horizon layout's header lighting: the mosque name and the hijri date
+// The Horizon layout's header lighting: the mosque name and the Hijri date
 // over the sky, lit by the sun or the moon passing behind them.
 //
 //   sky      the painted sky behind the header band (HorizonBackground)
@@ -16,7 +16,7 @@
 // thin rim of moonlight.
 //
 // Distances are in the item's logical pixels (bandSize). Compiled to
-// headerlight.frag.qsb by build-shaders.sh at the top of the repository;
+// headerlight.frag.qsb by scripts/build-shaders.sh;
 // the compiled file is not committed.
 
 layout(location = 0) in vec2 qt_TexCoord0;

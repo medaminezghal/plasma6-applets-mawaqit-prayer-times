@@ -88,7 +88,7 @@ function sunAt(n, times) {
 }
 
 /*
- * Where the moon is on the same arc. Its age in days is the hijri day of
+ * Where the moon is on the same arc. Its age in days is the Hijri day of
  * the month; it trails the sun by about 49 minutes a day (1440 / 29.53),
  * so it rises with the sun at the new moon and with Maghrib at the full.
  * Gone for the last day or two of the month.
@@ -121,7 +121,7 @@ function arcPoint(f, w, horizonY, lift) {
  * Where the sun and the moon stand in a scene w wide whose horizon is at
  * horizonY, and how big they are: { r, sun: {x, y, f, up}, moon: {...} }.
  * The arc rises nearly to the top: at their highest the two pass behind
- * the mosque name and the hijri date, which the header lighting keeps
+ * the mosque name and the Hijri date, which the header lighting keeps
  * readable (see shaders/headerlight.frag).
  */
 function bodiesAt(n, times, hijriDay, w, horizonY) {
@@ -139,7 +139,7 @@ function bodiesAt(n, times, hijriDay, w, horizonY) {
 }
 
 /*
- * The ink of the text in the sky - the mosque name, the hijri date and the
+ * The ink of the text in the sky - the mosque name, the Hijri date and the
  * countdown - all switch together: deep navy while the sky behind the
  * header is bright, light once it is dark. One rule for all of them, so
  * they never disagree at twilight, and an instant switch, never grey.

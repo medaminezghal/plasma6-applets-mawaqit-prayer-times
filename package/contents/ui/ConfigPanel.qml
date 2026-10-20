@@ -61,7 +61,7 @@ KCM.SimpleKCM {
         }
 
         // Horizontal panel: switches the inline strip between all prayers
-        // and the next one, with the strip's own hijri, countdown and icon
+        // and the next one, with the strip's own Hijri, countdown and icon
         // options. A vertical panel has its own choice below.
         ColumnLayout {
             Kirigami.FormData.label: i18n("Panel shows:")

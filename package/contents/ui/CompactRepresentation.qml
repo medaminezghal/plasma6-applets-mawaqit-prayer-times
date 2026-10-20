@@ -9,7 +9,7 @@ import "../code/mawaqit.js" as Mawaqit
 MouseArea {
     id: compact
 
-    // Arabic prayer names read right-to-left: hijri date rightmost, then
+    // Arabic prayer names read right-to-left: Hijri date rightmost, then
     // Fajr through Isha flowing leftward
     LayoutMirroring.enabled: root.rtl
     LayoutMirroring.childrenInherit: true
@@ -22,7 +22,7 @@ MouseArea {
     readonly property bool showHijri: Plasmoid.configuration.showHijriInPanel
     // Vertical panel: stack every prayer instead of the next prayer's glyph
     readonly property bool verticalAll: Plasmoid.configuration.verticalShowAllPrayers
-    // Vertical panel: the hijri date as digits on top, day over month over year
+    // Vertical panel: the Hijri date as digits on top, day over month over year
     readonly property bool verticalHijri: Plasmoid.configuration.verticalShowHijri
     readonly property var hijriParts: String(root.hijriDateNumeric).split("/")
 
@@ -43,7 +43,7 @@ MouseArea {
                               + (bold ? "-bold" : "") + ".svg");
     }
 
-    // Horizontal strip: glyphs in place of prayer names, and the hijri date
+    // Horizontal strip: glyphs in place of prayer names, and the Hijri date
     // as digits. Both are panel-only; the popup is never affected.
     readonly property bool useIcons: Plasmoid.configuration.usePrayerIconsInPanel
     readonly property string hijriText: Plasmoid.configuration.numericHijriInPanel
@@ -91,7 +91,7 @@ MouseArea {
     // between them grow with it
     readonly property real periodPx: Math.round(verticalLinePx * 0.75)
     readonly property real dotSide: Math.max(2, Math.round(verticalLinePx * 0.16))
-    // One big dot: between the hijri day, month and year, and between the
+    // One big dot: between the Hijri day, month and year, and between the
     // next prayer's time and the minutes left
     readonly property real bigDotSide: Math.max(3, Math.round(verticalLinePx * 0.26))
 
@@ -163,7 +163,7 @@ MouseArea {
      * A vertical panel is only as wide as it is thick, nowhere near enough
      * for a prayer name and a time side by side, so the strip is replaced
      * by the next prayer's glyph with the minutes left underneath. The
-     * tooltip still carries the hijri date and the full countdown, and a
+     * tooltip still carries the Hijri date and the full countdown, and a
      * click opens the same table the horizontal panel shows. The panel
      * settings can stack every prayer instead (verticalFullComp below). */
     Component {
@@ -350,7 +350,7 @@ MouseArea {
                     }
 
                     // Minutes left: one big dot, the same as between the
-                    // hijri day, month and year, then the number and its unit
+                    // Hijri day, month and year, then the number and its unit
                     // on lines of their own. They belong to the next prayer,
                     // so they take its accent and bold too; bold enlarges the
                     // dot as it does the colon's.
@@ -406,8 +406,8 @@ MouseArea {
         }
     }
 
-    /* --------------- vertical panel: hijri date on top -----------------
-     * The horizontal strip's hijri date as digits, turned on its end:
+    /* --------------- vertical panel: Hijri date on top -----------------
+     * The horizontal strip's Hijri date as digits, turned on its end:
      * day, a big dot, month, a big dot, the year, then the same thin
      * separator the horizontal strip draws between the date and the
      * prayers. DemiBold, like the horizontal date. Four digits fit the
@@ -485,7 +485,7 @@ MouseArea {
     }
 
     /* ---------------- next-prayer mode, horizontal panel --------------
-     * Same hijri date + separator as the full-mode strip, so the date is
+     * Same Hijri date + separator as the full-mode strip, so the date is
      * presented identically in both display modes, followed by the next
      * prayer and its optional countdown. */
     Component {
@@ -563,7 +563,7 @@ MouseArea {
     }
 
     /* --------------- all-prayers mode, horizontal panel ----------------
-     * One line: hijri date first, then every prayer. The next prayer gets
+     * One line: Hijri date first, then every prayer. The next prayer gets
      * its remaining time (h:mm) right beneath it. */
     Component {
         id: fullHorizontalComp
