@@ -217,7 +217,7 @@ Item {
             return;
         }
         var container = appletContainer();
-        if (!container || container.editMode) {
+        if (!container || container.editMode || moveHandler.active) {
             return;
         }
         var appletsLayout = container.layout;
@@ -306,6 +306,91 @@ Item {
         function onImplicitHeightChanged() {
             if (!scaleAnimation.running) {
                 fitTimer.restart();
+            }
+        }
+    }
+
+    /* ------------------ move the desktop widget ---------------------- *
+     * Drag the widget from anywhere to move it, without entering edit
+     * mode. This does what the containment's own edit-mode drag does
+     * (ItemContainer::mouseMoveEvent/mouseReleaseEvent in
+     * plasma-workspace): free the widget's cells, move its container with
+     * the pointer while the placeholder shows where it will land, then
+     * hand it back to positionItem(), which snaps it to the nearest free
+     * spot and saves the layout.
+     *
+     * Same public API and same guards as fitToContent() above: with no
+     * container, or a containment that works differently, the handler
+     * does nothing. Edit mode keeps its own drag, and a locked desktop
+     * (Kiosk) cannot be moved. The containment cancels its press-and-hold
+     * timer once the pointer travels past the drag distance, so a drag
+     * never turns into edit mode. */
+    DragHandler {
+        id: moveHandler
+        target: null
+        enabled: full.onDesktop && !Plasmoid.immutable
+
+        property Item container: null
+        // Pointer and container positions when the drag started, in the
+        // containment's own coordinates, so a zoomed or transformed
+        // containment still tracks the pointer. The desktop animates its
+        // containers' x and y (ShortDropBehavior), so each move sets the
+        // position from these rather than adding to the animated value,
+        // which would fall behind the pointer.
+        property point startPos
+        property point startItem
+        // Grid cell under the pointer when the placeholder last moved: like
+        // the containment, update the placeholder only on a new cell
+        property point lastCell
+
+        function layoutPos() {
+            var p = centroid.scenePosition;
+            return container.parent.mapFromItem(null, p.x, p.y);
+        }
+        function cellOf(p) {
+            var l = container.layout;
+            return Qt.point(Math.floor(p.x / Math.max(1, l.cellWidth)),
+                            Math.floor(p.y / Math.max(1, l.cellHeight)));
+        }
+
+        onActiveChanged: {
+            if (active) {
+                var c = full.appletContainer();
+                if (!c || c.editMode || c.layout.editMode || !c.parent
+                        || typeof c.layout.showPlaceHolderForItem !== "function"
+                        || typeof c.layout.hidePlaceHolder !== "function") {
+                    return;
+                }
+                // A fit still easing the size re-takes its cells when
+                // stopped; free them only after that
+                if (containerResize.running) {
+                    containerResize.stop();
+                }
+                container = c;
+                startPos = layoutPos();
+                startItem = Qt.point(c.x, c.y);
+                lastCell = cellOf(startPos);
+                c.layout.releaseSpace(c);
+                c.layout.showPlaceHolderForItem(c);
+            } else if (container) {
+                var done = container;
+                container = null;
+                done.layout.hidePlaceHolder();
+                done.layout.positionItem(done);
+            }
+        }
+
+        onCentroidChanged: {
+            if (!active || !container) {
+                return;
+            }
+            var p = layoutPos();
+            container.x = startItem.x + p.x - startPos.x;
+            container.y = startItem.y + p.y - startPos.y;
+            var cell = cellOf(p);
+            if (cell.x !== lastCell.x || cell.y !== lastCell.y) {
+                lastCell = cell;
+                container.layout.showPlaceHolderForItem(container);
             }
         }
     }
