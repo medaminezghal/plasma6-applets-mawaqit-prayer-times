@@ -658,7 +658,8 @@ Item {
 
                             PlasmaComponents3.Label {
                                 text: root.todayTimes
-                                      ? Mawaqit.formatTime(root.todayTimes[prayerRow.index], root.use24h)
+                                      ? Mawaqit.formatTime(root.todayTimes[prayerRow.index], root.use24h,
+                                                           Plasmoid.configuration.labelLanguage)
                                       : "—"
                                 font.family: root.appFontFamily
                                 font.pointSize: Kirigami.Theme.defaultFont.pointSize * full.sp
@@ -702,7 +703,8 @@ Item {
                     var out = [];
                     if (root.todayTimes) {
                         for (var i = 0; i < 6; ++i) {
-                            out.push(Mawaqit.formatTime(root.todayTimes[i], root.use24h));
+                            out.push(Mawaqit.formatTime(root.todayTimes[i], root.use24h,
+                                                        Plasmoid.configuration.labelLanguage));
                         }
                     }
                     return out;
@@ -730,7 +732,8 @@ Item {
                     var out = [];
                     if (root.todayTimes) {
                         for (var i = 0; i < 6; ++i) {
-                            out.push(Mawaqit.formatTime(root.todayTimes[i], root.use24h));
+                            out.push(Mawaqit.formatTime(root.todayTimes[i], root.use24h,
+                                                        Plasmoid.configuration.labelLanguage));
                         }
                     }
                     return out;
@@ -762,7 +765,8 @@ Item {
                     var out = [];
                     if (root.todayTimes) {
                         for (var i = 0; i < 6; ++i) {
-                            out.push(Mawaqit.formatTime(root.todayTimes[i], root.use24h));
+                            out.push(Mawaqit.formatTime(root.todayTimes[i], root.use24h,
+                                                        Plasmoid.configuration.labelLanguage));
                         }
                     }
                     return out;
@@ -792,7 +796,8 @@ Item {
                     var out = [];
                     if (root.todayTimes) {
                         for (var i = 0; i < 6; ++i) {
-                            out.push(Mawaqit.formatTime(root.todayTimes[i], root.use24h));
+                            out.push(Mawaqit.formatTime(root.todayTimes[i], root.use24h,
+                                                        Plasmoid.configuration.labelLanguage));
                         }
                     }
                     return out;
@@ -820,7 +825,8 @@ Item {
                     var out = [];
                     if (root.todayTimes) {
                         for (var i = 0; i < 6; ++i) {
-                            out.push(Mawaqit.formatTime(root.todayTimes[i], root.use24h));
+                            out.push(Mawaqit.formatTime(root.todayTimes[i], root.use24h,
+                                                        Plasmoid.configuration.labelLanguage));
                         }
                     }
                     return out;

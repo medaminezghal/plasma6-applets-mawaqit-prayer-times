@@ -294,11 +294,12 @@ var PRAYER_NAMES = {
  * than the system locale (no gettext catalogs are shipped). */
 var UI_STRINGS = {
     en: { inPrefix: "in",   tomorrow: "tomorrow",
-          h: "h", m: "m", s: "s" },
+          h: "h", m: "m", s: "s", am: "AM", pm: "PM" },
+    // \u0635 / \u0645 (sabahan / masa'an): CLDR's Arabic day periods
     ar: { inPrefix: "\u0628\u0639\u062F", tomorrow: "\u063A\u062F\u064B\u0627",
-          h: "\u0633", m: "\u062F", s: "\u062B" },
+          h: "\u0633", m: "\u062F", s: "\u062B", am: "\u0635", pm: "\u0645" },
     fr: { inPrefix: "dans", tomorrow: "demain",
-          h: "h", m: "min", s: "s" }
+          h: "h", m: "min", s: "s", am: "AM", pm: "PM" }
 };
 
 function uiString(key, langSetting) {
@@ -403,14 +404,25 @@ function previousPrayerDate(calendar, next, now) {
     return parseHM((yTimes || today)[5], yday);
 }
 
-function formatTime(hm, use24h) {
-    if (use24h) return hm;
+/**
+ * A prayer time ("HH:MM") split into what is displayed: the hour, the
+ * minutes, and the day period ("" in 24-hour format). The period marker
+ * follows the prayer-name language: AM/PM, or \u0635/\u0645 in Arabic.
+ */
+function timeParts(hm, use24h, langSetting) {
     var parts = hm.split(":");
+    if (use24h) return { hour: parts[0], minute: parts[1], period: "" };
     var h = parseInt(parts[0], 10);
-    var suffix = h >= 12 ? "PM" : "AM";
+    var period = uiString(h >= 12 ? "pm" : "am", langSetting);
     h = h % 12;
     if (h === 0) h = 12;
-    return h + ":" + parts[1] + " " + suffix;
+    return { hour: "" + h, minute: parts[1], period: period };
+}
+
+/** "17:05", "5:05 PM" or "5:05 \u0645" */
+function formatTime(hm, use24h, langSetting) {
+    var t = timeParts(hm, use24h, langSetting);
+    return t.hour + ":" + t.minute + (t.period !== "" ? " " + t.period : "");
 }
 
 /** Remaining time as "h:mm" (e.g. "1:46"), rounded up to the minute. */
