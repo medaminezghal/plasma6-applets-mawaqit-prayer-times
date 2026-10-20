@@ -58,10 +58,15 @@ KCM.AbstractKCM {
         id: tabs
         visible: page.cfg_panelPopupEnabled
 
+        // Each tab takes half the bar, which spans the page. The KDE desktop
+        // style sizes tab buttons to their label (width: implicitWidth in
+        // qqc2-desktop-style's TabButton.qml), so the width is set here.
         QQC2.TabButton {
+            width: Math.round(tabs.width / tabs.count)
             text: i18n("Panel")
         }
         QQC2.TabButton {
+            width: tabs.width - Math.round(tabs.width / tabs.count)
             text: i18n("Popup")
         }
     }
