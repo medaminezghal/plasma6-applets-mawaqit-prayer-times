@@ -20,6 +20,10 @@
             <label>What to show: "full" (all prayer times) or "next" (next prayer only)</label>
             <default>full</default>
         </entry>
+        <entry name="verticalShowAllPrayers" type="Bool">
+            <label>Vertical panel: stack every prayer time (true) or show only the next prayer (false)</label>
+            <default>false</default>
+        </entry>
         <entry name="labelLanguage" type="String">
             <label>Prayer name language: auto, en, ar, fr</label>
             <default>auto</default>
