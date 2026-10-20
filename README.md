@@ -80,6 +80,8 @@ Scroll sideways to see them all.
     <td align="center"><table><tr><td><img src="assets/screenshots/panel-next-icon.png" width="440" height="54" alt="Horizontal panel showing the next prayer with its icon"></td></tr></table>Next prayer, with its icon</td>
     <td align="center"><table><tr><td><img src="assets/screenshots/panel-vertical.png" width="60" height="164" alt="Vertical panel showing the next prayer's icon and the minutes left"></td></tr></table>Vertical panel, next prayer</td>
     <td align="center"><table><tr><td><img src="assets/screenshots/panel-vertical-all.png" width="60" height="361" alt="Vertical panel showing every prayer's icon over its time, with the next prayer in the accent color and, after a dot, the minutes left"></td></tr></table>Vertical panel, all prayers</td>
+    <td align="center"><table><tr><td><img src="assets/screenshots/panel-vertical-hijri.png" width="60" height="193" alt="Vertical panel showing the hijri date as day, month and year above the next prayer's icon and the minutes left"></td></tr></table>Vertical panel, next prayer, with the hijri date</td>
+    <td align="center"><table><tr><td><img src="assets/screenshots/panel-vertical-all-hijri.png" width="60" height="413" alt="Vertical panel showing the hijri date as day, month and year above every prayer's icon and time"></td></tr></table>Vertical panel, all prayers, with the hijri date</td>
   </tr>
 </table>
 
