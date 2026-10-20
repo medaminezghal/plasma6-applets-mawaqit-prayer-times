@@ -18,30 +18,10 @@ exact timetable your mosque publishes on [mawaqit.net](https://mawaqit.net)
   for its own glyph — first light, sunrise, zenith, shadow, sunset, night —
   which frees up a lot of panel width. The settings show the six icons with
   their names so nothing has to be guessed
-- **Six layouts for the desktop widget and the popup**: **Classic**, the
-  daily table; **Sundial**, today's prayers around a 24-hour dial (noon
-  at the top, midnight at the bottom) with a live countdown to the next
-  prayer in the middle; **Cards**, one card per prayer under a
-  half-circle gauge that fills up from the previous prayer to the next,
-  with the live countdown inside it; **Horizon**, the sky over
-  al-Masjid al-Aqsa or al-Masjid an-Nabawi through the day — night, dawn,
-  day, golden hour and dusk follow today's prayer times, the sun crosses
-  from sunrise to maghrib, and the moon stands where its age puts it, in
-  the phase of the hijri date, from the thin hilal after maghrib on the
-  1st to the full moon in the middle of the month; when either passes
-  behind the mosque name, the name is backlit by the sun or moonlit at
-  night; **Kaaba**
-  (الكعبة), its black cloth (the kiswa) with the gold belt, one cartouche
-  per prayer — the prayers already prayed today are embroidered in gold
-  and the next one is stitched, thread and needle, as its time
-  approaches; or **Qalam** (القلم), the five names written large on paper
-  — dry ink for the prayers already prayed today, the next one written by
-  a reed pen as its time approaches, the rest a faint pencil guide; the
-  paper turns dark at night. The Sundial stands on a **Sky** drawn from the
-  day's own times — daylight from sunrise to maghrib, night from isha to
-  fajr, twilight in between — so the horizon moves with the seasons.
-  Switching layout never resizes the widget. The panel itself keeps its
-  compact view
+- **Six layouts for the desktop widget and the popup**: Classic, Sundial,
+  Cards, Horizon (over al-Masjid al-Aqsa or al-Masjid an-Nabawi), Kaaba
+  and Qalam — see the [Gallery](#gallery). Switching layout never resizes
+  the widget. The panel itself keeps its compact view
 - **Hijri date**: shown in the popup, and optionally in the panel as either
   the spelled-out form (2 ربيع الثاني 1448 هـ) or plain digits (02/04/1448)
 - **Appearance customization**: pick a custom font, scale the desktop widget
