@@ -138,7 +138,12 @@ MouseArea {
     Layout.minimumWidth: vertical ? 0 : mainLoader.implicitWidth + Kirigami.Units.smallSpacing * 2
     Layout.minimumHeight: vertical ? mainLoader.implicitHeight + Kirigami.Units.smallSpacing * 2 : 0
 
-    onClicked: root.expanded = !root.expanded
+    // The popup opens on a click only when enabled on the Panel tab
+    onClicked: {
+        if (root.panelPopupEnabled) {
+            root.expanded = !root.expanded;
+        }
+    }
 
     Loader {
         id: mainLoader

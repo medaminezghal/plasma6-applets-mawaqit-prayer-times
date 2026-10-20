@@ -12,7 +12,8 @@ exact timetable your mosque publishes on [mawaqit.net](https://mawaqit.net)
 
 - **Panel-friendly compact view**: next prayer + live countdown in a horizontal
   panel; in a vertical panel, the next prayer's own icon with the minutes left
-  underneath. Click either to expand the full table
+  underneath. Optionally, a click opens a popup with the whole day (off by
+  default: enable it under Appearance → Panel, "On click")
 - **All prayers in a vertical panel, too**: optionally, a vertical panel
   stacks every prayer as its icon over its time — the hour, two dots and the
   minutes on lines of their own, so they fit even a thin panel, with the
