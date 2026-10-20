@@ -79,7 +79,7 @@ Scroll sideways to see them all.
     <td align="center"><table><tr><td><img src="assets/screenshots/panel-next-name.png" width="486" height="54" alt="Horizontal panel showing the next prayer with its name"></td></tr></table>Next prayer, with its name</td>
     <td align="center"><table><tr><td><img src="assets/screenshots/panel-next-icon.png" width="440" height="54" alt="Horizontal panel showing the next prayer with its icon"></td></tr></table>Next prayer, with its icon</td>
     <td align="center"><table><tr><td><img src="assets/screenshots/panel-vertical.png" width="60" height="164" alt="Vertical panel showing the next prayer's icon and the minutes left"></td></tr></table>Vertical panel, next prayer</td>
-    <td align="center"><table><tr><td><img src="assets/screenshots/panel-vertical-all.png" width="60" height="359" alt="Vertical panel showing every prayer's icon over its time, with the next prayer in the accent color and the minutes left beneath it"></td></tr></table>Vertical panel, all prayers</td>
+    <td align="center"><table><tr><td><img src="assets/screenshots/panel-vertical-all.png" width="60" height="361" alt="Vertical panel showing every prayer's icon over its time, with the next prayer in the accent color and, after a dot, the minutes left"></td></tr></table>Vertical panel, all prayers</td>
   </tr>
 </table>
 
