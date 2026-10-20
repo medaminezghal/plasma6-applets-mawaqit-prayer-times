@@ -48,36 +48,34 @@ All shown in Arabic with a dark Plasma theme, at 18:20 with Isha next.
 
 ### Desktop widget and popup layouts
 
+Scroll sideways to see them all.
+
 <table>
   <tr>
-    <td align="center"><img src="assets/screenshots/layout-classic.png" width="200" alt="Classic layout"><br>Classic</td>
-    <td align="center"><img src="assets/screenshots/layout-sundial.png" width="186" alt="Sundial layout"><br>Sundial</td>
-    <td align="center"><img src="assets/screenshots/layout-cards.png" width="200" alt="Cards layout"><br>Cards</td>
-    <td align="center"><img src="assets/screenshots/layout-horizon-aqsa.png" width="186" alt="Horizon layout over al-Masjid al-Aqsa"><br>Horizon, al-Aqsa Mosque</td>
-  </tr>
-  <tr>
-    <td align="center"><img src="assets/screenshots/layout-horizon-nabawi.png" width="186" alt="Horizon layout over the Prophet's Mosque"><br>Horizon, Prophet's Mosque</td>
-    <td align="center"><img src="assets/screenshots/layout-kaaba.png" width="186" alt="Kaaba layout"><br>Kaaba</td>
-    <td align="center"><img src="assets/screenshots/layout-qalam.png" width="186" alt="Qalam layout"><br>Qalam</td>
+    <td align="center"><img src="assets/screenshots/layout-classic.png" height="300" alt="Classic layout"><br>Classic</td>
+    <td align="center"><img src="assets/screenshots/layout-sundial.png" height="300" alt="Sundial layout"><br>Sundial</td>
+    <td align="center"><img src="assets/screenshots/layout-cards.png" height="300" alt="Cards layout"><br>Cards</td>
+    <td align="center"><img src="assets/screenshots/layout-horizon-aqsa.png" height="300" alt="Horizon layout over al-Masjid al-Aqsa"><br>Horizon, al-Aqsa Mosque</td>
+    <td align="center"><img src="assets/screenshots/layout-horizon-nabawi.png" height="300" alt="Horizon layout over the Prophet's Mosque"><br>Horizon, Prophet's Mosque</td>
+    <td align="center"><img src="assets/screenshots/layout-kaaba.png" height="300" alt="Kaaba layout"><br>Kaaba</td>
+    <td align="center"><img src="assets/screenshots/layout-qalam.png" height="300" alt="Qalam layout"><br>Qalam</td>
   </tr>
 </table>
 
 ### Panel
 
-All prayer times, with names, with icons, and with icons and the hijri date as digits:
+Scroll sideways to see them all.
 
-<img src="assets/screenshots/panel-all-names.png" width="654" alt="Horizontal panel showing all prayer times with their names"><br>
-<img src="assets/screenshots/panel-all-icons.png" width="528" alt="Horizontal panel showing all prayer times with icons"><br>
-<img src="assets/screenshots/panel-all-icons-numeric-hijri.png" width="464" alt="Horizontal panel showing all prayer times with icons and a numeric hijri date">
-
-Next prayer only, with its name and with its icon:
-
-<img src="assets/screenshots/panel-next-name.png" width="486" alt="Horizontal panel showing the next prayer with its name"><br>
-<img src="assets/screenshots/panel-next-icon.png" width="440" alt="Horizontal panel showing the next prayer with its icon">
-
-Vertical panel, the next prayer's icon and the minutes left:
-
-<img src="assets/screenshots/panel-vertical.png" width="60" alt="Vertical panel showing the next prayer's icon and the minutes left">
+<table>
+  <tr>
+    <td align="center"><img src="assets/screenshots/panel-all-names.png" width="654" alt="Horizontal panel showing all prayer times with their names"><br>All prayers, with names</td>
+    <td align="center"><img src="assets/screenshots/panel-all-icons.png" width="528" alt="Horizontal panel showing all prayer times with icons"><br>All prayers, with icons</td>
+    <td align="center"><img src="assets/screenshots/panel-all-icons-numeric-hijri.png" width="464" alt="Horizontal panel showing all prayer times with icons and a numeric hijri date"><br>All prayers, with icons and the hijri date as digits</td>
+    <td align="center"><img src="assets/screenshots/panel-next-name.png" width="486" alt="Horizontal panel showing the next prayer with its name"><br>Next prayer, with its name</td>
+    <td align="center"><img src="assets/screenshots/panel-next-icon.png" width="440" alt="Horizontal panel showing the next prayer with its icon"><br>Next prayer, with its icon</td>
+    <td align="center"><img src="assets/screenshots/panel-vertical.png" width="60" alt="Vertical panel showing the next prayer's icon and the minutes left"><br>Vertical panel</td>
+  </tr>
+</table>
 
 ## How it works
 
