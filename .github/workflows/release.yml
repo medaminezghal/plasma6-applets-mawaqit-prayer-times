@@ -52,6 +52,12 @@ jobs:
           set -euo pipefail
           # qsb from a pinned Qt Shader Tools, so every release compiles the
           # shaders the same way: the same version gives byte-identical files
+          # The qsb binary in PySide6-Addons links against the system's EGL,
+          # GL, xkbcommon and fontconfig, which the runner image lacks
+          # (libEGL.so.1: cannot open shared object file)
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq --no-install-recommends \
+              libegl1 libgl1 libxkbcommon0 libfontconfig1
           python3 -m venv "$RUNNER_TEMP/qsb"
           "$RUNNER_TEMP/qsb/bin/pip" install --quiet PySide6-Addons==6.12.0
           QSB="$RUNNER_TEMP/qsb/bin/pyside6-qsb" ./scripts/build-shaders.sh
