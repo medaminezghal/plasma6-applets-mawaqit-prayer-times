@@ -24,6 +24,10 @@
             <label>Vertical panel: stack every prayer time (true) or show only the next prayer (false)</label>
             <default>false</default>
         </entry>
+        <entry name="verticalShowHijri" type="Bool">
+            <label>Vertical panel: show the Hijri date on top, as digits (day, month, year)</label>
+            <default>false</default>
+        </entry>
         <entry name="labelLanguage" type="String">
             <label>Prayer name language: auto, en, ar, fr</label>
             <default>auto</default>
