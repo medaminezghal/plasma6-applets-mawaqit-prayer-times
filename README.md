@@ -13,6 +13,11 @@ exact timetable your mosque publishes on [mawaqit.net](https://mawaqit.net)
 - **Panel-friendly compact view**: next prayer + live countdown in a horizontal
   panel; in a vertical panel, the next prayer's own icon with the minutes left
   underneath. Click either to expand the full table
+- **All prayers in a vertical panel, too**: optionally, a vertical panel
+  stacks every prayer as its icon over its time — the hour, two dots and the
+  minutes on lines of their own, so they fit even a thin panel, with the
+  AM/PM marker underneath in 12-hour format. The next prayer stands out in
+  the accent color (and bold), with the minutes left beneath it
 - **Two display modes**: full daily timetable, or only the next prayer
 - **Icons instead of names**: the horizontal strip can swap each prayer name
   for its own glyph — first light, sunrise, zenith, shadow, sunset, night —
@@ -40,7 +45,7 @@ exact timetable your mosque publishes on [mawaqit.net](https://mawaqit.net)
   re-downloads only every few days to pick up schedule corrections
 - **Localized prayer names**: English, العربية, Français, or follow the
   system language
-- 12/24-hour format, optional sunrise (Shuruq) row
+- 12/24-hour format (with ص/م in Arabic), optional sunrise (Shuruq) row
 
 ## Gallery
 
@@ -73,7 +78,7 @@ Scroll sideways to see them all.
     <td align="center"><table><tr><td><img src="assets/screenshots/panel-all-icons-numeric-hijri.png" width="464" height="54" alt="Horizontal panel showing all prayer times with icons and a numeric hijri date"></td></tr></table>All prayers, with icons and the hijri date as digits</td>
     <td align="center"><table><tr><td><img src="assets/screenshots/panel-next-name.png" width="486" height="54" alt="Horizontal panel showing the next prayer with its name"></td></tr></table>Next prayer, with its name</td>
     <td align="center"><table><tr><td><img src="assets/screenshots/panel-next-icon.png" width="440" height="54" alt="Horizontal panel showing the next prayer with its icon"></td></tr></table>Next prayer, with its icon</td>
-    <td align="center"><table><tr><td><img src="assets/screenshots/panel-vertical.png" width="60" height="164" alt="Vertical panel showing the next prayer's icon and the minutes left"></td></tr></table>Vertical panel</td>
+    <td align="center"><table><tr><td><img src="assets/screenshots/panel-vertical.png" width="60" height="164" alt="Vertical panel showing the next prayer's icon and the minutes left"></td></tr></table>Vertical panel, next prayer</td>
   </tr>
 </table>
 
