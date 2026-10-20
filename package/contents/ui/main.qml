@@ -159,7 +159,7 @@ PlasmoidItem {
 
     // Year/month/day packed into one int. Comparing getDate() alone missed a
     // rollover onto the same day number - suspend on 14 Sept, resume on
-    // 14 Oct and the widget kept September's row and hijri date until the
+    // 14 Oct and the widget kept September's row and Hijri date until the
     // next midnight.
     property int lastComputedDay: -1
     function dayKey(d) {
@@ -221,7 +221,7 @@ PlasmoidItem {
             return true;
         }
         var now = new Date();
-        // Around the end of a hijri month the admin updates hijriAdjustment
+        // Around the end of a Hijri month the admin updates hijriAdjustment
         // (or the force-30 flag) after the moon sighting, usually in the
         // evening. Refetch once per day from day 28 through day 1, so the
         // change shows up the next day instead of up to refreshDays later.
@@ -357,7 +357,7 @@ PlasmoidItem {
                 refetch(true); // year rollover
             } else if (!force) {
                 // A new day: check right away rather than waiting up to an
-                // hour for the hourly timer (matters at hijri month end)
+                // hour for the hourly timer (matters at Hijri month end)
                 refetch(false);
             }
         }

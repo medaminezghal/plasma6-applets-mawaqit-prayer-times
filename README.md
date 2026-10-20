@@ -76,13 +76,13 @@ Scroll sideways to see them all.
   <tr>
     <td align="center"><table><tr><td><img src="assets/screenshots/panel-all-names.png" width="654" height="54" alt="Horizontal panel showing all prayer times with their names"></td></tr></table>All prayers, with names</td>
     <td align="center"><table><tr><td><img src="assets/screenshots/panel-all-icons.png" width="528" height="54" alt="Horizontal panel showing all prayer times with icons"></td></tr></table>All prayers, with icons</td>
-    <td align="center"><table><tr><td><img src="assets/screenshots/panel-all-icons-numeric-hijri.png" width="464" height="54" alt="Horizontal panel showing all prayer times with icons and a numeric hijri date"></td></tr></table>All prayers, with icons and the hijri date as digits</td>
+    <td align="center"><table><tr><td><img src="assets/screenshots/panel-all-icons-numeric-hijri.png" width="464" height="54" alt="Horizontal panel showing all prayer times with icons and a numeric Hijri date"></td></tr></table>All prayers, with icons and the Hijri date as digits</td>
     <td align="center"><table><tr><td><img src="assets/screenshots/panel-next-name.png" width="486" height="54" alt="Horizontal panel showing the next prayer with its name"></td></tr></table>Next prayer, with its name</td>
     <td align="center"><table><tr><td><img src="assets/screenshots/panel-next-icon.png" width="440" height="54" alt="Horizontal panel showing the next prayer with its icon"></td></tr></table>Next prayer, with its icon</td>
     <td align="center"><table><tr><td><img src="assets/screenshots/panel-vertical.png" width="60" height="164" alt="Vertical panel showing the next prayer's icon and the minutes left"></td></tr></table>Vertical panel, next prayer</td>
     <td align="center"><table><tr><td><img src="assets/screenshots/panel-vertical-all.png" width="60" height="361" alt="Vertical panel showing every prayer's icon over its time, with the next prayer in the accent color and, after a dot, the minutes left"></td></tr></table>Vertical panel, all prayers</td>
-    <td align="center"><table><tr><td><img src="assets/screenshots/panel-vertical-hijri.png" width="60" height="193" alt="Vertical panel showing the hijri date as day, month and year above the next prayer's icon and the minutes left"></td></tr></table>Vertical panel, next prayer, with the hijri date</td>
-    <td align="center"><table><tr><td><img src="assets/screenshots/panel-vertical-all-hijri.png" width="60" height="413" alt="Vertical panel showing the hijri date as day, month and year above every prayer's icon and time"></td></tr></table>Vertical panel, all prayers, with the hijri date</td>
+    <td align="center"><table><tr><td><img src="assets/screenshots/panel-vertical-hijri.png" width="60" height="193" alt="Vertical panel showing the Hijri date as day, month and year above the next prayer's icon and the minutes left"></td></tr></table>Vertical panel, next prayer, with the Hijri date</td>
+    <td align="center"><table><tr><td><img src="assets/screenshots/panel-vertical-all-hijri.png" width="60" height="413" alt="Vertical panel showing the Hijri date as day, month and year above every prayer's icon and time"></td></tr></table>Vertical panel, all prayers, with the Hijri date</td>
   </tr>
 </table>
 
@@ -159,14 +159,15 @@ paru -S plasma6-applets-mawaqit-prayer-times
 ### From source
 
 You need `git` and `qsb` from Qt Shader Tools (`qt6-shadertools` on Arch,
-`qt6-shader-baker` on Debian/Ubuntu). `build-shaders.sh` compiles the widget's
-shaders; without them the widget still works, but the Horizon layout's header
-keeps a plain color instead of being lit by the sun and the moon.
+`qt6-shader-baker` on Debian/Ubuntu). `scripts/build-shaders.sh` compiles the
+widget's shaders; without them the widget still works, but the Horizon
+layout's header keeps a plain color instead of being lit by the sun and the
+moon.
 
 ```sh
 git clone https://github.com/medaminezghal/plasma6-applets-mawaqit-prayer-times.git
 cd plasma6-applets-mawaqit-prayer-times
-./build-shaders.sh
+./scripts/build-shaders.sh
 kpackagetool6 --type Plasma/Applet --install package
 ```
 
@@ -174,7 +175,7 @@ To upgrade later, from the same folder:
 
 ```sh
 git pull
-./build-shaders.sh
+./scripts/build-shaders.sh
 kpackagetool6 --type Plasma/Applet --upgrade package
 ```
 

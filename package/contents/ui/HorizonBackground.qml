@@ -3,7 +3,7 @@ import "../code/horizon.js" as Horizon
 
 /* The background of the Horizon layout: the sky over the chosen mosque at
  * this minute. Its colours follow today's prayers, the sun crosses from
- * sunrise to Maghrib, the moon stands where its age - the hijri day - puts
+ * sunrise to Maghrib, the moon stands where its age - the Hijri day - puts
  * it and shows that day's phase, stars come out at night and the windows
  * light up after Maghrib.
  *

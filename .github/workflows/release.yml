@@ -54,7 +54,7 @@ jobs:
           # shaders the same way: the same version gives byte-identical files
           python3 -m venv "$RUNNER_TEMP/qsb"
           "$RUNNER_TEMP/qsb/bin/pip" install --quiet PySide6-Addons==6.12.0
-          QSB="$RUNNER_TEMP/qsb/bin/pyside6-qsb" ./build-shaders.sh
+          QSB="$RUNNER_TEMP/qsb/bin/pyside6-qsb" ./scripts/build-shaders.sh
 
       - name: Build .plasmoid
         id: build

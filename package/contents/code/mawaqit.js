@@ -131,8 +131,8 @@ function requestConf(path, fallbackName, notFound, onSuccess, onError) {
     return xhr;
 }
 
-/* --------------------------- hijri calendar --------------------------- *
- * Mawaqit renders its own hijri date with the Kuwaiti arithmetic
+/* --------------------------- Hijri calendar --------------------------- *
+ * Mawaqit renders its own Hijri date with the Kuwaiti arithmetic
  * algorithm: a 30-year cycle of 10631 days with mean 29.5-day months, so
  * odd months run 30 days and even months 29. It never consults an
  * observation-based calendar, which is exactly why every mosque page
@@ -259,7 +259,7 @@ function hijriMonthNames(langSetting) {
 }
 
 /**
- * The same hijri date as formatHijri, rendered as DD/MM/YYYY digits for
+ * The same Hijri date as formatHijri, rendered as DD/MM/YYYY digits for
  * the panel strip, where the spelled-out month name is too wide.
  */
 function formatHijriNumeric(date, adjustment, force30) {

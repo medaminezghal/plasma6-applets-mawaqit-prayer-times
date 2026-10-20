@@ -46,7 +46,7 @@ Item {
     }
     readonly property var horizonSky: root.appHorizonScene && root.todayTimes
                                       ? Horizon.skyAt(nowMinutes, root.todayTimes) : null
-    // The moon's age is the day of the hijri month
+    // The moon's age is the day of the Hijri month
     readonly property int hijriDay: {
         var d = parseInt(String(root.hijriDateNumeric).split("/")[0], 10);
         return d > 0 ? d : 1;
@@ -932,7 +932,7 @@ Item {
     }
 
     /* ------------------- Horizon header lighting --------------------- *
-     * The band from the top of the sky down to the rule under the hijri
+     * The band from the top of the sky down to the rule under the Hijri
      * date, redrawn by headerlight.frag from the sky behind it and the
      * header text over it. Declared last, so it is drawn over both. */
     ShaderEffectSource {
