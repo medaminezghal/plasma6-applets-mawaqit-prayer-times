@@ -27,7 +27,6 @@ Item {
     property bool nextIsTomorrow: false
     property string countdownText: ""
     property real progress: 0         // 0..1 from the previous prayer to the next
-    property bool boldNext: true
 
     property string fontFamily: ""
     property real pointSize: 10
@@ -236,7 +235,7 @@ Item {
                     segs.push([a, b, len]);
                     total += len;
                 }
-                var left = p * total, end = pts[0];
+                var left = p * total, end = pts[0], seg = 0;
                 ctx.beginPath();
                 ctx.moveTo(pts[0][0], pts[0][1]);
                 for (var j = 0; j < segs.length && left > 0; ++j) {
@@ -245,27 +244,72 @@ Item {
                            segs[j][0][1] + (segs[j][1][1] - segs[j][0][1]) * t];
                     ctx.lineTo(end[0], end[1]);
                     left -= segs[j][2];
+                    seg = j;
                 }
                 ctx.stroke();
 
-                var nl = Math.max(9, 14 * view.sizeScale);
-                var tilt = (view.mirrored ? -35 : 35) * Math.PI / 180;
-                var tipX = end[0] + Math.sin(tilt) * nl, tipY = end[1] - Math.cos(tilt) * nl;
+                // The needle stands out of the cartouche, never across its
+                // text: up from the upper half of the outline and down from
+                // the lower half, leaning the way the thread runs, so it
+                // never crosses a name, a time or the next cartouche
+                var u = view.sizeScale;
+                var sa = segs[seg][0], sb = segs[seg][1];
+                var tx = (sb[0] - sa[0]) / segs[seg][2], ty = (sb[1] - sa[1]) / segs[seg][2];
+                var vy = (end[1] < y + h / 2 || (end[1] === y + h / 2 && ty < 0)) ? -1 : 1;
+                var lean = Math.abs(tx) > 0.1 ? (tx > 0 ? 1 : -1) : (view.mirrored ? -1 : 1);
+                // Full length until less outline is left than the needle is
+                // long, then as long as what is left
+                var rest = (1 - p) * total;
+                var want = Math.min(Math.max(9, 14 * u), rest);
+                // On a slanted side, leaning toward the middle would cut the
+                // corner of the cartouche, and near the widget's edge leaning
+                // out would leave it: stand straight then
+                var onSlant = Math.abs(ty) > 0.3;
+                var towardMiddle = (end[0] < x + w / 2) === (lean > 0);
+                var lx = 0.55 / Math.sqrt(1 + 0.55 * 0.55);
+                if ((onSlant && towardMiddle)
+                        || (lean > 0 && end[0] + lx * want > width - 1)
+                        || (lean < 0 && end[0] - lx * want < 1)) {
+                    lean = 0;
+                }
+                var dx = lean * lx, dy = vy * Math.sqrt(1 - dx * dx);
+                var nl = dy < 0 ? Math.min(want, (end[1] - 1) / -dy)
+                                : Math.min(want, (height - 1 - end[1]) / dy);
+                nl = Math.max(Math.min(want, 3 * u), nl);
+                var tipX = end[0] + dx * nl, tipY = end[1] + dy * nl;
                 ctx.strokeStyle = "#ece6d6";
-                ctx.lineWidth = Math.max(1, 1.3 * view.sizeScale);
+                ctx.lineWidth = Math.max(1, 1.3 * u);
                 ctx.beginPath();
                 ctx.moveTo(end[0], end[1]);
                 ctx.lineTo(tipX, tipY);
                 ctx.stroke();
-                // The loose thread trailing from its eye
+                // The thread left on the needle is the outline still to
+                // stitch, at a third of its length. It lies loose along the
+                // band's edge, outside every cartouche, away from the middle
+                // of this one, or back the other way near the widget's edge.
+                var fx = lean !== 0 ? lean : (end[0] < x + w / 2 ? -1 : 1);
+                var slack = rest / 3;
+                var room = fx > 0 ? width - 1 - tipX : tipX - 1;
+                if (room < slack) {
+                    var other = fx > 0 ? tipX - 1 : width - 1 - tipX;
+                    if (other > room) {
+                        fx = -fx;
+                        room = other;
+                    }
+                }
+                // A gentle wave, so it reads as slack thread
+                var amp = 1.2 * u, wave = 7 * u;
+                var run = Math.min(room, slack / 1.08);
+                var steps = Math.max(2, Math.ceil(run / (1.5 * u)));
                 ctx.strokeStyle = view.gold;
-                ctx.lineWidth = Math.max(0.6, 0.8 * view.sizeScale);
+                ctx.lineWidth = Math.max(0.6, 0.8 * u);
                 ctx.beginPath();
                 ctx.moveTo(tipX, tipY);
-                var side = view.mirrored ? -1 : 1;
-                ctx.bezierCurveTo(tipX + side * 6 * view.sizeScale, tipY - 9 * view.sizeScale,
-                                  tipX + side * 13 * view.sizeScale, tipY - 3 * view.sizeScale,
-                                  tipX + side * 20 * view.sizeScale, tipY - 12 * view.sizeScale);
+                for (var q = 1; q <= steps; ++q) {
+                    var r = run * q / steps;
+                    var lift = Math.min(1, r / (4 * u));
+                    ctx.lineTo(tipX + fx * r, tipY + Math.sin(2 * Math.PI * r / wave) * amp * lift);
+                }
                 ctx.stroke();
             }
         }

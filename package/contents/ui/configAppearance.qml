@@ -252,7 +252,18 @@ KCM.SimpleKCM {
 
         QQC2.CheckBox {
             id: boldNextCheck
+            enabled: !page.kaaba
             text: i18n("Show the next prayer in bold")
+        }
+
+        QQC2.Label {
+            Layout.fillWidth: true
+            Layout.maximumWidth: Kirigami.Units.gridUnit * 22
+            visible: page.kaaba
+            text: i18n("The Kaaba layout shows the next prayer by the needle stitching its cartouche.")
+            font.pointSize: Kirigami.Theme.smallFont.pointSize
+            opacity: 0.7
+            wrapMode: Text.WordWrap
         }
 
         /* ------------------------ Colors -------------------------- */

@@ -801,7 +801,6 @@ Item {
                 nextIsTomorrow: root.next !== null && root.next.tomorrow === true
                 countdownText: root.countdownClock
                 progress: root.nextProgress
-                boldNext: root.appBoldNext
 
                 fontFamily: root.appFontFamily
                 pointSize: Kirigami.Theme.defaultFont.pointSize * full.sp
