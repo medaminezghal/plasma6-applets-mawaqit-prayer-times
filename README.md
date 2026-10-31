@@ -38,9 +38,10 @@ exact timetable your mosque publishes on [mawaqit.net](https://mawaqit.net)
   Classic and Cards layouts; the Sundial, Horizon, Kaaba and Qalam paint
   their own. "Show the next prayer in bold" needs a
   font that has a bold style; with fonts that don't, it has no effect
-- **Set up from your mosque's link**: paste the link the Mawaqit app shares
-  for your mosque, or its mawaqit.net address, in the settings (see
-  [Choosing your mosque](#choosing-your-mosque))
+- **Mosque finder in settings**: pick your country, then search by mosque
+  name, city or address, or list the mosques nearest to you. If yours isn't
+  listed, search the web for its mawaqit.net page, or paste the link the
+  Mawaqit app shares (see [Choosing your mosque](#choosing-your-mosque))
 - **Offline-first**: the entire year's calendar is cached locally after a
   single download — the widget keeps working with no network, and
   re-downloads only every few days to pick up schedule corrections
@@ -116,20 +117,57 @@ right-click → **Refresh prayer times**.
 
 ## Choosing your mosque
 
+### Find it in the settings
+
+1. Open the widget's settings and pick your **Country** (the one of your
+   system language is preselected).
+2. Type your mosque's name, your city or the street in **Find your
+   mosque**, or click **Near me** to list the closest mosques first.
+3. Click your mosque in the list.
+
+The first search in a country downloads the mosques Mawaqit shows on its
+map for that country, once a day at most; the search itself runs on your
+computer, so it follows your typing. It matches Arabic and Latin spellings
+alike (accents, diacritics and the different forms of alef don't matter).
+
+> **Note:** Mawaqit's own search needs an account token since 6 October
+> 2026, so the finder uses the list behind Mawaqit's map instead. That list
+> may not include every mosque, and Mawaqit could close it too. Whatever
+> happens to it, the two ways below keep working.
+
+### Search the web
+
+Click **Search the web** under the mosque link: it opens a web search for
+`site:mawaqit.net` with what you typed in the finder and your country. Open
+your mosque's page from the results and paste its address in **Mosque
+link**.
+
+### Paste the link from the Mawaqit app
+
 1. In the Mawaqit app, search for your mosque, open it and tap **Share**.
 2. The shared message contains a link like `https://mawaqit.net/ar/id/12345`.
    Copy **only that link**, not the whole message.
-3. Open the widget's settings and paste it in **Mosque link**.
+3. Paste it in **Mosque link**.
 
 The address of the mosque's page on mawaqit.net (for example
 `https://mawaqit.net/fr/your-mosque`) works too, and so does its last part,
 the mosque's slug. The widget checks the link right away and shows the
 mosque's name, so you know you picked the right one.
 
-The settings used to search Mawaqit for mosques and detect your location.
-Since 6 October 2026 Mawaqit's search API requires an account token, and
-Mawaqit doesn't allow its API to be used outside its own applications, so
-the widget no longer searches; it only reads your mosque's public page.
+### About "Near me"
+
+On KDE Plasma, **"Near me" almost always works from your IP address**. That
+gives the location of your internet provider, not your own: it is usually
+right about the country, but it often points to a major city (such as the
+capital) instead of yours. The settings tell you when the location is only
+approximate; typing your city is more reliable.
+
+A precise location needs Qt Positioning (`qt6-positioning` on Arch, an
+optional dependency) with a GeoClue that accepts the widget and has a real
+location source (WiFi, GPS or a mobile-broadband modem). With GeoClue's
+default configuration, apps need a location agent Plasma doesn't provide,
+so the request is usually refused and the widget falls back to the IP
+lookup.
 
 ## Installation
 
@@ -184,6 +222,18 @@ kpackagetool6 --type Plasma/Applet --upgrade package
 - At runtime the widget contacts only `mawaqit.net`.
 - The **General** settings page asks the KDE Store (`api.kde-look.org`) for
   the latest version, only while that page is open.
+- The mosque finder downloads your chosen country's mosques from
+  `mawaqit.net` when you search; nothing about you is sent.
+- **Near me** runs only when you click it, and the location is used only to
+  sort the mosques by distance while the settings are open. Nothing is
+  stored. The services involved are:
+  - IP lookup: `ipwho.is`, then `ipapi.co`, then `ip-api.com` (each is tried
+    only if the previous one fails; `ip-api.com` is queried over plain HTTP,
+    as its free tier has no HTTPS)
+  - GeoClue, if installed, may query [BeaconDB](https://beacondb.net) with
+    nearby WiFi networks
+  - With a GeoClue location, `nominatim.openstreetmap.org` for its country
+- **Search the web** opens DuckDuckGo in your browser.
 
 ## License
 
