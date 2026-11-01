@@ -5,6 +5,10 @@
  * by English name. The full list rather than only the countries that have
  * mosques on Mawaqit today, so a country that gets its first one later
  * isn't missing; the finder says when a country has none.
+ *
+ * Except IL: the widget never shows that name. Mawaqit's map files those
+ * mosques under IL, so Palestine (PS) reads both lists (mapCodes()), and
+ * a location or locale in IL picks Palestine (canonical()).
  */
 var COUNTRIES = [
     { code: "AF", name: "Afghanistan" },
@@ -116,7 +120,6 @@ var COUNTRIES = [
     { code: "IQ", name: "Iraq" },
     { code: "IE", name: "Ireland" },
     { code: "IM", name: "Isle of Man" },
-    { code: "IL", name: "Israel" },
     { code: "IT", name: "Italy" },
     { code: "JM", name: "Jamaica" },
     { code: "JP", name: "Japan" },
@@ -258,9 +261,21 @@ var COUNTRIES = [
     { code: "ZW", name: "Zimbabwe" }
 ];
 
-/** Index of a country code in COUNTRIES, or -1. */
-function indexOf(code) {
+/** The code the finder uses for a country code: IL -> PS. */
+function canonical(code) {
     var cc = String(code || "").toUpperCase();
+    return cc === "IL" ? "PS" : cc;
+}
+
+/** The map countries Mawaqit files a country's mosques under. */
+function mapCodes(code) {
+    var cc = canonical(code);
+    return cc === "PS" ? ["PS", "IL"] : [cc];
+}
+
+/** Index of a country code in COUNTRIES (after canonical()), or -1. */
+function indexOf(code) {
+    var cc = canonical(code);
     for (var i = 0; i < COUNTRIES.length; i++) {
         if (COUNTRIES[i].code === cc) return i;
     }
