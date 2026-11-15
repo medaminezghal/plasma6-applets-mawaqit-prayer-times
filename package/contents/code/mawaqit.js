@@ -42,14 +42,61 @@ function extractTitle(html) {
     return m ? m[1].trim() : "";
 }
 
+/* ---------------------------- hidden word ----------------------------- *
+ * The widget never shows the name "Israel", in any script, whatever
+ * Mawaqit's data holds: mosque names, addresses and cities, slugs and the
+ * messages built from them all go through hideWord() or displaySlug()
+ * before they reach the screen. In the finder its mosques are listed under
+ * Palestine (see countries.js).
+ * --------------------------------------------------------------------- */
+
+var HIDDEN_WORD = /isra[e\u00eb]l[a-z\u00e0-\u00ff]*|[\u0625\u0627]\u0633\u0631\u0627\u0626\u064a\u0644[\u0600-\u06ff]*|\u05d9\u05e9\u05e8\u05d0\u05dc[\u05d0-\u05ea]*/gi;
+var SEPARATORS = "\\s,\u060c;\\-\u2013\u2014|/";
+
+/** text without the hidden word, and without the separators it leaves. */
+function hideWord(text) {
+    var s = String(text === undefined || text === null ? "" : text);
+    HIDDEN_WORD.lastIndex = 0;
+    if (!HIDDEN_WORD.test(s)) return s;
+    HIDDEN_WORD.lastIndex = 0;
+    s = s.replace(HIDDEN_WORD, "\u0000");
+    // A separator next to a removed word goes with it ("Hura, X" stays,
+    // "X, <word>" and "<word> - X" lose theirs), then empty brackets
+    s = s.replace(new RegExp("[" + SEPARATORS + "]*\u0000[" + SEPARATORS + "]*", "g"), function (m, offset, all) {
+        var before = all.substring(0, offset).trim();
+        var after = all.substring(offset + m.length).trim();
+        if (before === "" || after === "") return "";
+        var sep = /[,\u060c]/.exec(m);
+        return sep ? sep[0] + " " : " ";
+    });
+    s = s.replace(/\(\s*\)|\[\s*\]/g, "").replace(/\s{2,}/g, " ");
+    return s.trim();
+}
+
+/** A slug as shown in the settings: without the segments of the hidden
+ * word. The configured slug keeps them, since mawaqit.net needs them. */
+function displaySlug(slug) {
+    var parts = String(slug || "").split("-");
+    var kept = [];
+    for (var i = 0; i < parts.length; i++) {
+        HIDDEN_WORD.lastIndex = 0;
+        if (!HIDDEN_WORD.test(parts[i])) kept.push(parts[i]);
+    }
+    HIDDEN_WORD.lastIndex = 0;
+    return kept.join("-");
+}
+
 /**
  * Keep only the essential mosque name. Admins often pack the address into
  * the name field ("NAME — street city country"); cut at the first spaced
  * dash or em/en dash. Bare hyphens inside words (Al-Hidaya) are preserved.
+ * A name that is a slug (the fallback before the real name is known) is
+ * shown like the settings show it.
  */
 function cleanMosqueName(name) {
-    var cut = name.split(/\s+[\u2014\u2013]\s*|\s+-\s+/)[0].trim();
-    return cut.length > 0 ? cut : name.trim();
+    var n = /^[a-z0-9]+(?:-[a-z0-9]+)+$/.test(name) ? displaySlug(name) : hideWord(name);
+    var cut = n.split(/\s+[\u2014\u2013]\s*|\s+-\s+/)[0].trim();
+    return cut.length > 0 ? cut : n.trim();
 }
 
 /* -------------------------- mosque page ------------------------------ *
@@ -74,7 +121,7 @@ function fetchConf(mosque, onSuccess, onError) {
 
 function fetchConfBySlug(slug, onSuccess, onError) {
     return requestConf("/fr/" + encodeURIComponent(slug), slug,
-                       "Mosque “" + slug + "” not found on mawaqit.net",
+                       "Mosque “" + displaySlug(slug) + "” not found on mawaqit.net",
                        onSuccess, onError);
 }
 
@@ -171,12 +218,13 @@ function searchKey(text) {
 }
 
 function _toMosque(it) {
+    var address = hideWord(it.address).trim();
+    var city = hideWord(it.city).trim();
     var place = [];
-    if (it.address) place.push(String(it.address).trim());
-    if (it.city && place.join(" ").indexOf(String(it.city).trim()) === -1) {
-        place.push(String(it.city).trim());
-    }
-    var name = String(it.name || it.slug);
+    if (address !== "") place.push(address);
+    if (city !== "" && address.indexOf(city) === -1) place.push(city);
+    var name = it.name ? hideWord(it.name) : "";
+    if (name === "") name = displaySlug(it.slug);
     return {
         slug: String(it.slug),
         name: name,
@@ -186,17 +234,54 @@ function _toMosque(it) {
         nameKey: searchKey(name),
         // The slug is a Latin transliteration, so "sfax" also finds a
         // mosque whose name and city are only written in Arabic
-        key: searchKey([name, it.address, it.city, it.zipcode, it.slug].join(" "))
+        key: searchKey([name, address, city, it.zipcode,
+                        displaySlug(it.slug)].join(" "))
     };
 }
 
 /**
- * The mosques of a country (ISO 3166 alpha-2 code), from the cache when it
- * is fresh. onSuccess gets an array of mosques (see _toMosque), possibly
- * empty; it runs before this returns when the cache answers. Returns the
- * request, or null when nothing was sent.
+ * The mosques of one or more map countries (ISO 3166 alpha-2 codes, see
+ * Countries.mapCodes()), merged, from the cache when it is fresh.
+ * onSuccess gets an array of mosques (see _toMosque), possibly empty; it
+ * runs before this returns when the cache answers every code. Returns an
+ * object whose abort() drops the download in progress, or null when
+ * nothing was sent.
  */
-function fetchCountryMosques(code, onSuccess, onError) {
+function fetchCountryMosques(codes, onSuccess, onError) {
+    var list = [].concat(codes);
+    var merged = [];
+    var seen = {};
+    var current = null;
+    var handle = { abort: function () { if (current !== null) current.abort(); } };
+    var sent = false;
+    function next(i) {
+        if (i >= list.length) {
+            onSuccess(merged);
+            return;
+        }
+        var request = _fetchMapCode(list[i], function (mosques) {
+            current = null;
+            for (var j = 0; j < mosques.length; j++) {
+                if (!seen[mosques[j].slug]) {
+                    seen[mosques[j].slug] = true;
+                    merged.push(mosques[j]);
+                }
+            }
+            next(i + 1);
+        }, function (err) {
+            current = null;
+            onError(err);
+        });
+        if (request !== null) {
+            current = request;
+            sent = true;
+        }
+    }
+    next(0);
+    return sent ? handle : null;
+}
+
+function _fetchMapCode(code, onSuccess, onError) {
     var cc = String(code).toUpperCase();
     var cached = _mapCache[cc];
     if (cached && Date.now() - cached.time < MAP_CACHE_MS) {

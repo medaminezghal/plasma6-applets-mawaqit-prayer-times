@@ -109,11 +109,30 @@ KCM.SimpleKCM {
     // lookup: good for the country, not for the city
     readonly property real preciseAccuracyMeters: 3000
 
+    // The configured slug when the link field shows it shortened by
+    // Mawaqit.displaySlug(), "" when the field shows it as it is. Text in
+    // the field equal to the shortened form stands for this slug.
+    property string hiddenSlug: ""
+
+    // Show slug in the link field, shortened if it has to be
+    function showSlug(slug) {
+        var shown = Mawaqit.displaySlug(slug);
+        hiddenSlug = shown !== slug ? slug : "";
+        if (slugField.text !== shown) {
+            slugField.text = shown;
+        }
+    }
+
+    // The slug the link field's text stands for
+    function fieldSlug(text) {
+        return hiddenSlug !== "" && text === Mawaqit.displaySlug(hiddenSlug) ? hiddenSlug : text;
+    }
+
     onCfg_mosqueSlugChanged: {
         // Never rewrite the field while the user is typing in it — that
         // moves the cursor and makes the page appear to refresh
-        if (!slugField.activeFocus && slugField.text !== cfg_mosqueSlug) {
-            slugField.text = cfg_mosqueSlug;
+        if (!slugField.activeFocus && fieldSlug(slugField.text) !== cfg_mosqueSlug) {
+            showSlug(cfg_mosqueSlug);
         }
     }
 
@@ -133,7 +152,7 @@ KCM.SimpleKCM {
     // preselected before the user picks one
     function localeCountry() {
         var m = /_([A-Z]{2})/.exec(Qt.locale().name);
-        return m && Countries.indexOf(m[1]) >= 0 ? m[1] : "";
+        return m && Countries.indexOf(m[1]) >= 0 ? Countries.canonical(m[1]) : "";
     }
 
     function countryName(code) {
@@ -189,7 +208,7 @@ KCM.SimpleKCM {
         finderResults = [];
         finderLoading = true;
         setFinderStatus(i18n("Downloading the mosques of %1…", countryName(code)), false);
-        finderRequest = Mawaqit.fetchCountryMosques(code, function (mosques) {
+        finderRequest = Mawaqit.fetchCountryMosques(Countries.mapCodes(code), function (mosques) {
             if (token !== page.finderToken) return;
             page.finderRequest = null;
             page.finderLoading = false;
@@ -215,7 +234,7 @@ KCM.SimpleKCM {
         var found = Mawaqit.findMosques(finderMosques, query, finderOrigin, finderLimit);
         finderResults = found.results;
         if (found.total === 0) {
-            setFinderStatus(i18n("No mosque found for “%1” in %2. Use “Search the web” below, or paste your mosque's link.", query, country), true);
+            setFinderStatus(i18n("No mosque found for “%1” in %2. Use “Search the web” below, or paste your mosque's link.", Mawaqit.hideWord(query), country), true);
         } else if (query === "") {
             setFinderStatus(finderOrigin.approximate
                 ? i18n("Mosques nearest to your approximate location, from your internet provider. If none is near you, type your city or your mosque's name.")
@@ -230,7 +249,7 @@ KCM.SimpleKCM {
 
     function pickMosque(mosque) {
         var name = Mawaqit.cleanMosqueName(mosque.name);
-        slugField.text = mosque.slug;
+        showSlug(mosque.slug);
         page.cfg_mosqueSlug = mosque.slug;
         page.cfg_mosqueName = name;
         page.lastVerifiedSlug = mosque.slug;
@@ -359,7 +378,7 @@ KCM.SimpleKCM {
         locating = false;
         finderOrigin = { lat: lat, lon: lon, approximate: approximate === true };
         if (Countries.indexOf(country) >= 0) {
-            selectCountry(String(country).toUpperCase());
+            selectCountry(Countries.canonical(country));
         }
         // The nearest mosques, whatever was typed before
         searchField.text = "";
@@ -375,10 +394,8 @@ KCM.SimpleKCM {
     /* ------------------------- mosque page -------------------------- */
 
     function applySlugInput() {
-        var normalized = Mawaqit.normalizeMosque(slugField.text);
-        if (normalized !== slugField.text) {
-            slugField.text = normalized;
-        }
+        var normalized = Mawaqit.normalizeMosque(fieldSlug(slugField.text));
+        showSlug(normalized);
         if (page.cfg_mosqueSlug !== normalized) {
             page.cfg_mosqueSlug = normalized;
             page.cfg_mosqueName = "";
@@ -463,7 +480,7 @@ KCM.SimpleKCM {
         cancelUpdateCheck();
     }
     Component.onCompleted: {
-        slugField.text = cfg_mosqueSlug;
+        showSlug(cfg_mosqueSlug);
         selectCountry(localeCountry());
         checkForUpdate();
     }
@@ -637,7 +654,7 @@ KCM.SimpleKCM {
                 // Dirty the config on every keystroke so Apply enables
                 // immediately; normalization and verification wait for
                 // Enter or focus leaving the field
-                onTextEdited: page.cfg_mosqueSlug = text
+                onTextEdited: page.cfg_mosqueSlug = page.fieldSlug(text)
                 onEditingFinished: page.applySlugInput()
                 // Enter applies + verifies the slug in place; swallow it so it
                 // does not fall through to the dialog's OK button and close it
