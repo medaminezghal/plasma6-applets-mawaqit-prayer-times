@@ -131,6 +131,286 @@ function requestConf(path, fallbackName, notFound, onSuccess, onError) {
     return xhr;
 }
 
+/* --------------------------- mosque finder ---------------------------- *
+ * Mawaqit's keyword search (api/2.0/mosque/search) answers 401 without an
+ * account token since 6 October 2026. The mosque map on mawaqit.net uses
+ * another endpoint, api/2.0/mosque/map/<country code>, which still
+ * answers without one: every mosque of a country on its map, with slug,
+ * name, address, city, zipcode, lat and lng, unsorted and unpaged (about
+ * 2,500 for Tunisia, 1.3 MB). So the finder downloads a country once and
+ * searches and sorts it here. It may not list every mosque Mawaqit has,
+ * and it may close like the search did, which is why the settings always
+ * keep the link field and the web search next to it.
+ * --------------------------------------------------------------------- */
+
+// The endpoint itself is publicly cached for a day (max-age=86400)
+var MAP_CACHE_MS = 24 * 60 * 60 * 1000;
+// Country code -> { time, mosques }. A .pragma library is shared by the
+// whole engine, so this outlives one opening of the settings.
+var _mapCache = {};
+
+/*
+ * Text folded for matching: lowercase, without Latin accents or Arabic
+ * diacritics and tatweel, with the Arabic letters people write
+ * interchangeably made the same (أ إ آ ٱ -> ا, ة -> ه, ى ی -> ي, ک -> ك)
+ * and punctuation turned into spaces. Padded with spaces, so " word"
+ * finds a word start.
+ */
+function searchKey(text) {
+    var s = String(text || "").toLowerCase();
+    if (typeof s.normalize === "function") {
+        s = s.normalize("NFD");
+    }
+    s = s.replace(/[̀-ًͯ-ٰٟـ]/g, "")
+         .replace(/[آأإٱ]/g, "ا")
+         .replace(/ة/g, "ه")
+         .replace(/[ىی]/g, "ي")
+         .replace(/ک/g, "ك")
+         .replace(/[\s\-_.,;:!?'"`’‘“”()\[\]{}\/\\|+*&#@،؛؟·–—]+/g, " ");
+    return " " + s.trim() + " ";
+}
+
+function _toMosque(it) {
+    var place = [];
+    if (it.address) place.push(String(it.address).trim());
+    if (it.city && place.join(" ").indexOf(String(it.city).trim()) === -1) {
+        place.push(String(it.city).trim());
+    }
+    var name = String(it.name || it.slug);
+    return {
+        slug: String(it.slug),
+        name: name,
+        place: place.join(", "),
+        lat: typeof it.lat === "number" ? it.lat : NaN,
+        lon: typeof it.lng === "number" ? it.lng : NaN,
+        nameKey: searchKey(name),
+        // The slug is a Latin transliteration, so "sfax" also finds a
+        // mosque whose name and city are only written in Arabic
+        key: searchKey([name, it.address, it.city, it.zipcode, it.slug].join(" "))
+    };
+}
+
+/**
+ * The mosques of a country (ISO 3166 alpha-2 code), from the cache when it
+ * is fresh. onSuccess gets an array of mosques (see _toMosque), possibly
+ * empty; it runs before this returns when the cache answers. Returns the
+ * request, or null when nothing was sent.
+ */
+function fetchCountryMosques(code, onSuccess, onError) {
+    var cc = String(code).toUpperCase();
+    var cached = _mapCache[cc];
+    if (cached && Date.now() - cached.time < MAP_CACHE_MS) {
+        onSuccess(cached.mosques);
+        return null;
+    }
+    var xhr = new XMLHttpRequest();
+    xhr.open("GET", BASE + "/api/2.0/mosque/map/" + encodeURIComponent(cc));
+    xhr.setRequestHeader("Accept", "application/json");
+    xhr.onreadystatechange = function () {
+        if (xhr.readyState !== XMLHttpRequest.DONE) return;
+        if (xhr.status === 0) {
+            onError("could not reach mawaqit.net");
+            return;
+        }
+        if (xhr.status !== 200) {
+            console.log("[mawaqit] mosque map HTTP " + xhr.status);
+            onError("HTTP " + xhr.status + " from mawaqit.net");
+            return;
+        }
+        var arr;
+        try {
+            arr = JSON.parse(xhr.responseText);
+        } catch (e) {
+            arr = null;
+        }
+        if (!Array.isArray(arr)) {
+            onError("unexpected response from mawaqit.net");
+            return;
+        }
+        var mosques = [];
+        for (var i = 0; i < arr.length; i++) {
+            if (arr[i] && arr[i].slug) {
+                mosques.push(_toMosque(arr[i]));
+            }
+        }
+        _mapCache[cc] = { time: Date.now(), mosques: mosques };
+        onSuccess(mosques);
+    };
+    xhr.send();
+    return xhr;
+}
+
+/** Great-circle distance in kilometres. */
+function distanceKm(lat1, lon1, lat2, lon2) {
+    var rad = Math.PI / 180;
+    var dLat = (lat2 - lat1) * rad;
+    var dLon = (lon2 - lon1) * rad;
+    var a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
+          + Math.cos(lat1 * rad) * Math.cos(lat2 * rad)
+          * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    return 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+/**
+ * Search mosques (from fetchCountryMosques).
+ * query   What the user typed; every word must appear in the name,
+ *         address, city, zipcode or slug. Empty lists all of them, which
+ *         only makes sense with an origin.
+ * origin  { lat, lon } or null. With one, results carry their distance
+ *         and the nearest come first among equally good matches.
+ * limit   Most results returned.
+ * Returns { results: [{ slug, name, place, distance }], total } where
+ * distance is in km, or -1 without an origin, and total counts every
+ * match, not only the ones returned.
+ */
+function findMosques(mosques, query, origin, limit) {
+    var words = searchKey(query).trim();
+    words = words === "" ? [] : words.split(" ");
+    var hasOrigin = origin && !isNaN(origin.lat) && !isNaN(origin.lon);
+    var found = [];
+    for (var i = 0; i < mosques.length; i++) {
+        var m = mosques[i];
+        var ok = true;
+        for (var w = 0; w < words.length && ok; w++) {
+            ok = m.key.indexOf(words[w]) !== -1;
+        }
+        if (!ok) continue;
+        // 0: the name starts with the first word, 1: a word of the name
+        // does, 2: any other match
+        var rank = 2;
+        if (words.length > 0) {
+            if (m.nameKey.indexOf(" " + words[0]) === 0) rank = 0;
+            else if (m.nameKey.indexOf(" " + words[0]) > 0) rank = 1;
+        }
+        var d = (hasOrigin && !isNaN(m.lat) && !isNaN(m.lon))
+                ? distanceKm(origin.lat, origin.lon, m.lat, m.lon) : -1;
+        found.push({ m: m, rank: rank, distance: d });
+    }
+    found.sort(function (a, b) {
+        if (a.rank !== b.rank) return a.rank - b.rank;
+        if (a.distance !== b.distance) {
+            // Unknown distances (-1) go last
+            if (a.distance < 0) return 1;
+            if (b.distance < 0) return -1;
+            return a.distance - b.distance;
+        }
+        return a.m.name.localeCompare(b.m.name);
+    });
+    var results = [];
+    for (var j = 0; j < found.length && j < limit; j++) {
+        results.push({
+            slug: found[j].m.slug,
+            name: found[j].m.name,
+            place: found[j].m.place,
+            distance: found[j].distance
+        });
+    }
+    return { results: results, total: found.length };
+}
+
+/**
+ * Web search for a mosque's mawaqit.net page, for when the finder can't
+ * help: the mosque isn't on the map, or the map endpoint is gone.
+ * text     What the user typed in the finder, may be empty.
+ * country  Name of the chosen country, may be empty.
+ */
+function webSearchUrl(text, country) {
+    var q = "site:mawaqit.net";
+    var t = String(text || "").trim();
+    var c = String(country || "").trim();
+    if (t !== "") q += " " + t;
+    if (c !== "") q += " " + c;
+    return "https://duckduckgo.com/?q=" + encodeURIComponent(q);
+}
+
+/* ------------------------------ location ------------------------------ *
+ * Only for "Near me" in the settings. Each IP provider is tried in turn;
+ * they give the location of the internet provider, which is usually right
+ * about the country but often points to another city.
+ * --------------------------------------------------------------------- */
+
+var IP_PROVIDERS = [
+    {
+        url: "https://ipwho.is/",
+        parse: function (j) {
+            return (j.success !== false && typeof j.latitude === "number")
+                ? { lat: j.latitude, lon: j.longitude, country: j.country_code || "" } : null;
+        }
+    },
+    {
+        url: "https://ipapi.co/json/",
+        parse: function (j) {
+            return (typeof j.latitude === "number")
+                ? { lat: j.latitude, lon: j.longitude, country: j.country_code || "" } : null;
+        }
+    },
+    {
+        url: "http://ip-api.com/json",
+        parse: function (j) {
+            return (j.status === "success")
+                ? { lat: j.lat, lon: j.lon, country: j.countryCode || "" } : null;
+        }
+    }
+];
+
+/* onSuccess gets { lat, lon, country } (country: alpha-2 code or ""). */
+function ipLocate(onSuccess, onError, _index) {
+    var index = _index || 0;
+    if (index >= IP_PROVIDERS.length) {
+        onError("all IP geolocation providers failed");
+        return;
+    }
+    var provider = IP_PROVIDERS[index];
+    var xhr = new XMLHttpRequest();
+    xhr.open("GET", provider.url);
+    xhr.setRequestHeader("Accept", "application/json");
+    // Nominatim and ipapi.co refuse QML's default "Mozilla/5.0" agent
+    xhr.setRequestHeader("User-Agent", APP_USER_AGENT);
+    xhr.onreadystatechange = function () {
+        if (xhr.readyState !== XMLHttpRequest.DONE) return;
+        var next = function () { ipLocate(onSuccess, onError, index + 1); };
+        if (xhr.status !== 200) {
+            console.log("[mawaqit] ip provider " + provider.url + " HTTP " + xhr.status);
+            next();
+            return;
+        }
+        try {
+            var loc = provider.parse(JSON.parse(xhr.responseText));
+            if (loc) onSuccess(loc);
+            else next();
+        } catch (e) {
+            console.log("[mawaqit] ip provider " + provider.url + " parse error");
+            next();
+        }
+    };
+    xhr.send();
+}
+
+/* The country (alpha-2 code) at a position, for a GeoClue fix, which
+ * comes without one. */
+function reverseCountry(lat, lon, onSuccess, onError) {
+    var xhr = new XMLHttpRequest();
+    xhr.open("GET", "https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=3&lat="
+             + lat + "&lon=" + lon);
+    xhr.setRequestHeader("Accept", "application/json");
+    xhr.setRequestHeader("User-Agent", APP_USER_AGENT);
+    xhr.onreadystatechange = function () {
+        if (xhr.readyState !== XMLHttpRequest.DONE) return;
+        if (xhr.status !== 200) {
+            onError("reverse geocoding failed (HTTP " + xhr.status + ")");
+            return;
+        }
+        try {
+            var a = JSON.parse(xhr.responseText).address || {};
+            if (a.country_code) onSuccess(String(a.country_code).toUpperCase());
+            else onError("no country in the reverse geocoding result");
+        } catch (e) {
+            onError("unexpected reverse geocoding response");
+        }
+    };
+    xhr.send();
+}
+
 /* --------------------------- Hijri calendar --------------------------- *
  * Mawaqit renders its own Hijri date with the Kuwaiti arithmetic
  * algorithm: a 30-year cycle of 10631 days with mean 29.5-day months, so
@@ -504,8 +784,8 @@ var STORE_ID = "2365203";
 var STORE_PAGE = "https://store.kde.org/p/" + STORE_ID;
 
 /* QML's XMLHttpRequest sends "User-Agent: Mozilla/5.0" unless told
- * otherwise; name the application instead. mawaqit.net requests are left
- * as they were. */
+ * otherwise; name the application instead (the KDE Store and the location
+ * services). mawaqit.net requests are left as they were. */
 var APP_USER_AGENT = "plasma6-applets-mawaqit-prayer-times "
                    + "(+https://github.com/medaminezghal/plasma6-applets-mawaqit-prayer-times)";
 
